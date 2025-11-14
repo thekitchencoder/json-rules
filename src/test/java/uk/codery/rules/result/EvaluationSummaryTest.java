@@ -1,6 +1,7 @@
-package uk.codery.rules;
+package uk.codery.rules.result;
 
 import org.junit.jupiter.api.Test;
+import uk.codery.rules.model.Rule;
 
 import java.util.List;
 import java.util.Map;

@@ -1,7 +1,11 @@
-package uk.codery.rules;
+package uk.codery.rules.result;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import uk.codery.rules.evaluator.RuleEvaluator;
+import uk.codery.rules.evaluator.SpecificationEvaluator;
+import uk.codery.rules.model.Rule;
+import uk.codery.rules.model.Specification;
 
 import java.util.List;
 import java.util.Map;

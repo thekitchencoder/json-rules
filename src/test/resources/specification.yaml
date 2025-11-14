@@ -9,6 +9,9 @@ rules:
   - id: time-on-uc
     query: {benefits: {universal_credit: {duration_months: { $gte: 6}}}}
 
+  - id: previous-provision
+    query: {provision: {$elemMatch: {$nin: [restart,whp]}}}
+
 ruleSets:
   - id: restart-ruleset
     operator: AND

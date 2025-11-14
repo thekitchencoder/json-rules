@@ -136,7 +136,7 @@ Consider reorganizing for v1.0:
 ```
 uk.codery.rules.api.*        → Public API (interfaces, builders)
 uk.codery.rules.core.*       → Core implementation
-uk.codery.rules.operators.*  → Operator implementations
+uk.codery.rules.model.*  → Operator implementations
 uk.codery.rules.exceptions.* → Exception hierarchy
 ```
 

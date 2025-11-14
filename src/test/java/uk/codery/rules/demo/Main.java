@@ -2,7 +2,12 @@ package uk.codery.rules.demo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import uk.codery.rules.*;
+import uk.codery.rules.evaluator.SpecificationEvaluator;
+import uk.codery.rules.model.Specification;
+import uk.codery.rules.result.EvaluationOutcome;
+import uk.codery.rules.result.EvaluationResult;
+import uk.codery.rules.result.Result;
+import uk.codery.rules.result.RuleSetResult;
 
 import java.io.File;
 import java.io.IOException;
