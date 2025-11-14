@@ -268,13 +268,15 @@ public class RuleEvaluator {
                            operand == null ? "null" : operand.getClass().getSimpleName());
                 return false;
             }
-            return valList.containsAll(queryList);
+            //noinspection SuspiciousMethodCalls
+            return new HashSet<>(valList).containsAll(queryList);
         } catch (Exception e) {
             log.warn("Error evaluating $all operator: {}", e.getMessage(), e);
             return false;
         }
     }
 
+    @SuppressWarnings({"rawtypes", "unchecked"})
     private int compare(Object a, Object b) {
         if (a instanceof Number && b instanceof Number) {
             double aNum = ((Number) a).doubleValue();
@@ -288,13 +290,15 @@ public class RuleEvaluator {
     }
 
     private String getType(Object val) {
-        if (val == null) return "null";
-        if (val instanceof List) return "array";
-        if (val instanceof String) return "string";
-        if (val instanceof Number) return "number";
-        if (val instanceof Boolean) return "boolean";
-        if (val instanceof Map) return "object";
-        return val.getClass().getSimpleName().toLowerCase();
+        return switch (val) {
+            case null -> "null";
+            case List<?> ignored -> "array";
+            case String ignored -> "string";
+            case Number ignored -> "number";
+            case Boolean ignored -> "boolean";
+            case Map<?,?> ignored -> "object";
+            default -> val.getClass().getSimpleName().toLowerCase();
+        };
     }
 
     private InnerResult matchValue(Object val, Object query, String path) {
@@ -306,7 +310,7 @@ public class RuleEvaluator {
                 Map<String, Object> queryMap = (Map<String, Object>) query;
                 if (queryMap.containsKey("$exists")) {
                     // Allow $exists to evaluate against null values
-                    return matchMapValue(val, queryMap, path);
+                    return matchMapValue(null, queryMap, path);
                 }
             }
             return createMissingResult(path);
@@ -327,7 +331,7 @@ public class RuleEvaluator {
         }
 
         log.warn("Unknown query type: {} - treating as UNDETERMINED",
-                   query == null ? "null" : query.getClass().getSimpleName());
+                query.getClass().getSimpleName());
         return InnerResult.undetermined("Unknown query type: " + query.getClass().getSimpleName());
     }
 
