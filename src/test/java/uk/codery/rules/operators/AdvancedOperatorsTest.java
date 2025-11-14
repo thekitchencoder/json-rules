@@ -90,8 +90,7 @@ class AdvancedOperatorsTest {
 
     @Test
     void exists_withNullValue_shouldWork() {
-        Map<String, Object> doc = Map.of("name", "John");
-        // Value is explicitly null in the map - but field doesn't exist in our test
+        Map<String, Object> doc = Map.of("name", "unimportant");
         Rule rule = new Rule("test", Map.of("missing", Map.of("$exists", true)));
 
         EvaluationResult result = evaluator.evaluateRule(doc, rule);

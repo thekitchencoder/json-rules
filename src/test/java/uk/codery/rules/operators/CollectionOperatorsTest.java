@@ -96,10 +96,10 @@ class CollectionOperatorsTest {
     }
 
     @Test
-    void in_withNullValue_shouldWork() {
+    void in_withBlankValue_shouldWork() {
         Map<String, Object> doc = Map.of("name", "test");
         // Querying missing field
-        Rule rule = new Rule("test", Map.of("missing", Map.of("$in", List.of(null, "value"))));
+        Rule rule = new Rule("test", Map.of("missing", Map.of("$in", List.of("", "value"))));
 
         EvaluationResult result = evaluator.evaluateRule(doc, rule);
 

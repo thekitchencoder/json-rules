@@ -63,7 +63,7 @@ class EndToEndTest {
         RuleSet eligibilitySet = new RuleSet(
             "restart-eligible",
             Operator.AND,
-            List.of("uc-active", "uc-duration", "unemployed", "seeking-work")
+            List.of(new Rule("uc-active"), new Rule("uc-duration"), new Rule("unemployed"), new Rule("seeking-work"))
         );
 
         Specification spec = new Specification(
@@ -113,7 +113,7 @@ class EndToEndTest {
         RuleSet eligibilitySet = new RuleSet(
             "restart-eligible",
             Operator.AND,
-            List.of("uc-active", "uc-duration", "unemployed", "seeking-work")
+            List.of(new Rule("uc-active"), new Rule("uc-duration"), new Rule("unemployed"), new Rule("seeking-work"))
         );
 
         Specification spec = new Specification(
@@ -180,7 +180,7 @@ class EndToEndTest {
         );
 
         List<Rule> rules = List.of(
-            new Rule("has-admin-role", Map.of("roles", Map.of("$in", List.of("admin", "superuser")))),
+            new Rule("has-admin-role", Map.of("roles", Map.of("$elemMatch", Map.of("$in", List.of("admin", "superuser"))))),
             new Rule("account-active", Map.of("status", Map.of("$eq", "ACTIVE"))),
             new Rule("mfa-enabled", Map.of("mfa_enabled", Map.of("$eq", true)))
         );
@@ -188,7 +188,7 @@ class EndToEndTest {
         RuleSet adminAccessSet = new RuleSet(
             "admin-access",
             Operator.AND,
-            List.of("has-admin-role", "account-active", "mfa-enabled")
+            List.of(new Rule("has-admin-role"), new Rule("account-active"), new Rule("mfa-enabled"))
         );
 
         Specification spec = new Specification(
@@ -214,7 +214,7 @@ class EndToEndTest {
 
         List<Rule> rules = List.of(
             new Rule("has-admin-role", Map.of("roles", Map.of("$in", List.of("admin", "superuser")))),
-            new Rule("has-user-role", Map.of("roles", Map.of("$in", List.of("user")))),
+            new Rule("has-user-role", Map.of("roles", Map.of("$elemMatch", Map.of("$in", List.of("user"))))),
             new Rule("account-active", Map.of("status", Map.of("$eq", "ACTIVE"))),
             new Rule("email-verified", Map.of("verified_email", Map.of("$eq", true)))
         );
@@ -222,13 +222,13 @@ class EndToEndTest {
         RuleSet adminAccessSet = new RuleSet(
             "admin-access",
             Operator.AND,
-            List.of("has-admin-role", "account-active")
+            List.of(new Rule("has-admin-role"), new Rule("account-active"))
         );
 
         RuleSet userAccessSet = new RuleSet(
             "user-access",
             Operator.AND,
-            List.of("has-user-role", "account-active", "email-verified")
+            List.of(new Rule("has-user-role"), new Rule("account-active"), new Rule("email-verified"))
         );
 
         Specification spec = new Specification(
@@ -278,7 +278,7 @@ class EndToEndTest {
         RuleSet discountSet = new RuleSet(
             "loyalty-discount",
             Operator.AND,
-            List.of("loyal-customer", "minimum-purchase", "valid-promo")
+            List.of(new Rule("loyal-customer"), new Rule("minimum-purchase"), new Rule("valid-promo"))
         );
 
         Specification spec = new Specification(
@@ -328,7 +328,7 @@ class EndToEndTest {
         RuleSet moderationSet = new RuleSet(
             "needs-review",
             Operator.OR,
-            List.of("low-reputation", "new-account", "has-reports", "suspicious-content")
+            List.of(new Rule("low-reputation"), new Rule("new-account"), new Rule("has-reports"), new Rule("suspicious-content"))
         );
 
         Specification spec = new Specification(
@@ -399,8 +399,8 @@ class EndToEndTest {
         RuleSet approvalSet = new RuleSet(
             "loan-approval",
             Operator.AND,
-            List.of("age-requirement", "uk-resident", "income-verified",
-                    "minimum-income", "credit-score-check", "loan-amount-reasonable")
+            List.of(new Rule("age-requirement"), new Rule("uk-resident"), new Rule("income-verified"),
+                    new Rule("minimum-income"), new Rule("credit-score-check"), new Rule("loan-amount-reasonable"))
         );
 
         Specification spec = new Specification(

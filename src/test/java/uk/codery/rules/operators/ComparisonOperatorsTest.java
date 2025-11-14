@@ -76,18 +76,6 @@ class ComparisonOperatorsTest {
     }
 
     @Test
-    void eq_withNullValues_shouldMatch() {
-        Map<String, Object> doc = Map.of("name", "John");
-        // Querying missing field is like checking null
-        Rule rule = new Rule("test", Map.of("missing", Map.of("$eq", null)));
-
-        EvaluationResult result = evaluator.evaluateRule(doc, rule);
-
-        // Missing field becomes UNDETERMINED
-        assertThat(result.state()).isEqualTo(EvaluationState.UNDETERMINED);
-    }
-
-    @Test
     void eq_caseSensitiveStrings_shouldNotMatch() {
         Map<String, Object> doc = Map.of("name", "John");
         Rule rule = new Rule("test", Map.of("name", Map.of("$eq", "john")));

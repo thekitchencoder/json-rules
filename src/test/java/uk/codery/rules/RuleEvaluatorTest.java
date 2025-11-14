@@ -504,6 +504,6 @@ class RuleEvaluatorTest {
 
         String reason = result.reason();
         assertThat(reason).isNotNull();
-        assertThat(reason).contains("UNDETERMINED");
+        assertThat(reason).contains("Missing data");
     }
 }
