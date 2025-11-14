@@ -240,7 +240,18 @@ public class RuleEvaluator {
     }
 
     private InnerResult matchValue(Object val, Object query, String path) {
+        // Special handling for operators that need to evaluate even when val is null
+        // $exists checks if a field exists (null means it doesn't exist)
+        // $type can check for type "null"
         if (val == null) {
+            if (query instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> queryMap = (Map<String, Object>) query;
+                if (queryMap.containsKey("$exists") || queryMap.containsKey("$type")) {
+                    // Allow these operators to evaluate against null values
+                    return matchMapValue(val, queryMap, path);
+                }
+            }
             return createMissingResult(path);
         }
 
