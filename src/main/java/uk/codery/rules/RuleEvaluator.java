@@ -97,6 +97,19 @@ public class RuleEvaluator {
                 return false;
             }
             List<?> list = (List<?>) operand;
+
+            // MongoDB behavior: if val is an array, check if ANY element in val is in the operand list
+            if (val instanceof List) {
+                List<?> valList = (List<?>) val;
+                for (Object item : valList) {
+                    if (list.contains(item)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            // Otherwise, check if val is in the operand list
             return list.contains(val);
         } catch (Exception e) {
             log.warn("Error evaluating $in operator: {}", e.getMessage(), e);
@@ -112,6 +125,19 @@ public class RuleEvaluator {
                 return false;
             }
             List<?> list = (List<?>) operand;
+
+            // MongoDB behavior: if val is an array, check that NO element in val is in the operand list
+            if (val instanceof List) {
+                List<?> valList = (List<?>) val;
+                for (Object item : valList) {
+                    if (list.contains(item)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            // Otherwise, check if val is not in the operand list
             return !list.contains(val);
         } catch (Exception e) {
             log.warn("Error evaluating $nin operator: {}", e.getMessage(), e);
@@ -240,7 +266,17 @@ public class RuleEvaluator {
     }
 
     private InnerResult matchValue(Object val, Object query, String path) {
+        // Special handling for $exists operator - it needs to evaluate even when val is null
+        // $exists checks if a field exists (null means it doesn't exist)
         if (val == null) {
+            if (query instanceof Map) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> queryMap = (Map<String, Object>) query;
+                if (queryMap.containsKey("$exists")) {
+                    // Allow $exists to evaluate against null values
+                    return matchMapValue(val, queryMap, path);
+                }
+            }
             return createMissingResult(path);
         }
 
