@@ -26,11 +26,16 @@
 - [ ] Integration tests for end-to-end scenarios
 - [ ] Edge case testing (nulls, type mismatches, deep nesting)
 
-### Error Handling (Week 1)
-- [ ] Create exception hierarchy (RuleEvaluationException, InvalidOperatorException, etc.)
-- [ ] Add input validation at API boundaries
-- [ ] Replace `System.err.println` with proper exceptions (RuleEvaluator.java:194)
-- [ ] Add descriptive error messages with context
+### Error Handling - Graceful Degradation (Week 1)
+**Contract:** Rules never fail hard - return MATCHED/NOT_MATCHED/UNDETERMINED
+- [ ] Add `EvaluationState` enum (MATCHED / NOT_MATCHED / UNDETERMINED)
+- [ ] Update `EvaluationResult` with state + failureReason
+- [ ] Handle unknown operators → UNDETERMINED + warn log (RuleEvaluator.java:194)
+- [ ] Handle type mismatches → UNDETERMINED + warn log
+- [ ] Handle invalid regex patterns → UNDETERMINED + warn log
+- [ ] Add SLF4J logging (replace System.err.println)
+- [ ] Add evaluation summary tracking (determined vs undetermined rules)
+- [ ] FUTURE: Add strict mode (throw exceptions for development)
 
 ---
 
