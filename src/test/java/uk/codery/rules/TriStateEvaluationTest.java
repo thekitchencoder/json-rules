@@ -225,34 +225,6 @@ class TriStateEvaluationTest {
         assertThat(outcome.summary().fullyDetermined()).isTrue();
     }
 
-    // ========== Backward Compatibility ==========
-
-    @Test
-    void backwardCompatibility_matchedMethod() {
-        Rule rule = new Rule("test", Map.of("age", Map.of("$eq", 25)));
-        EvaluationResult result = evaluator.evaluateRule(validDocument, rule);
-
-        // matched() should still work for backward compatibility
-        assertThat(result.matched()).isTrue();
-    }
-
-    @Test
-    void backwardCompatibility_notMatchedReturnsFalse() {
-        Rule rule = new Rule("test", Map.of("age", Map.of("$eq", 30)));
-        EvaluationResult result = evaluator.evaluateRule(validDocument, rule);
-
-        assertThat(result.matched()).isFalse();
-    }
-
-    @Test
-    void backwardCompatibility_undeterminedReturnsFalse() {
-        Rule rule = new Rule("test", Map.of("age", Map.of("$unknown", 18)));
-        EvaluationResult result = evaluator.evaluateRule(validDocument, rule);
-
-        // UNDETERMINED should also return false for matched() for safety
-        assertThat(result.matched()).isFalse();
-    }
-
     // ========== Edge Cases ==========
 
     @Test

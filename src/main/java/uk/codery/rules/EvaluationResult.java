@@ -51,10 +51,11 @@ public record EvaluationResult(
     }
 
     /**
-     * Returns true if the rule matched (backward compatibility).
+     * Implements the Result interface contract.
      *
-     * @return true only if state is MATCHED
+     * @return true only if state is MATCHED, false otherwise
      */
+    @Override
     public boolean matched() {
         return state == EvaluationState.MATCHED;
     }

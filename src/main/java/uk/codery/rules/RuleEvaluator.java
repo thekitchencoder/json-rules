@@ -55,13 +55,6 @@ class RuleEvaluator {
             String missingPath = path.isEmpty() ? "root" : path;
             return new InnerResult(EvaluationState.UNDETERMINED, List.of(missingPath), "Missing data at: " + missingPath);
         }
-
-        /**
-         * Backward compatibility: returns true if state is MATCHED.
-         */
-        boolean match() {
-            return state == EvaluationState.MATCHED;
-        }
     }
 
     public EvaluationResult evaluateRule(Object doc, Rule rule) {
@@ -195,7 +188,7 @@ class RuleEvaluator {
             @SuppressWarnings("unchecked")
             Map<String, Object> queryMap = (Map<String, Object>) operand;
             for (Object item : (List<?>) val) {
-                if (matchValue(item, queryMap, "").match()) {
+                if (matchValue(item, queryMap, "").state == EvaluationState.MATCHED) {
                     return true;
                 }
             }
