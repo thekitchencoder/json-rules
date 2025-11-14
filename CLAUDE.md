@@ -18,28 +18,32 @@ This document provides context for AI assistants (like Claude) working with the 
 
 ```
 json-rules/
-├── pom.xml                                 # Maven configuration
-├── src/main/java/uk/codery/rules/         # Core library (12 classes, 757 lines)
-│   ├── RuleEvaluator.java                 # [418 lines] Query matching engine
-│   ├── SpecificationEvaluator.java        # [49 lines] Orchestrates evaluation
-│   ├── EvaluationState.java               # [40 lines] MATCHED/NOT_MATCHED/UNDETERMINED
-│   ├── EvaluationResult.java              # [106 lines] Individual rule result
-│   ├── EvaluationOutcome.java             # [16 lines] Overall specification result
-│   ├── EvaluationSummary.java             # [60 lines] Evaluation statistics
-│   ├── Rule.java                          # [10 lines] Rule definition record
-│   ├── RuleSet.java                       # [9 lines] Grouped rules with AND/OR
-│   ├── Specification.java                 # [6 lines] Collection of rules
-│   ├── Operator.java                      # [6 lines] AND/OR enum
-│   ├── RuleSetResult.java                 # [30 lines] RuleSet evaluation result
-│   └── Result.java                        # [7 lines] Interface for results
-├── src/test/java/uk/codery/rules/         # Tests and demo
-│   ├── TriStateEvaluationTest.java        # Comprehensive test suite
-│   ├── EvaluationSummaryTest.java         # Summary calculation tests
-│   └── demo/Main.java                     # Demo CLI application
-└── src/test/resources/                    # Test data
-    ├── specification.{json,yaml}          # Sample specifications
-    ├── document.yaml                      # Sample document
-    └── seed/citizens.json                 # Employment/benefits data
+├── pom.xml                                          # Maven configuration
+├── src/main/java/uk/codery/rules/                  # Core library (12 classes, 757 lines)
+│   ├── model/                                      # Domain models (what users create)
+│   │   ├── Rule.java                               # [10 lines] Rule definition record
+│   │   ├── RuleSet.java                            # [9 lines] Grouped rules with AND/OR
+│   │   ├── Specification.java                      # [6 lines] Collection of rules
+│   │   └── Operator.java                           # [6 lines] AND/OR enum
+│   ├── evaluator/                                  # Evaluation engine (what users call)
+│   │   ├── RuleEvaluator.java                      # [418 lines] Query matching engine
+│   │   └── SpecificationEvaluator.java             # [49 lines] Orchestrates evaluation
+│   ├── result/                                     # Result types (what users receive)
+│   │   ├── EvaluationState.java                    # [40 lines] MATCHED/NOT_MATCHED/UNDETERMINED
+│   │   ├── EvaluationResult.java                   # [106 lines] Individual rule result
+│   │   ├── EvaluationOutcome.java                  # [16 lines] Overall specification result
+│   │   ├── EvaluationSummary.java                  # [60 lines] Evaluation statistics
+│   │   ├── RuleSetResult.java                      # [30 lines] RuleSet evaluation result
+│   │   └── Result.java                             # [7 lines] Interface for results
+│   └── operator/                                   # Future: custom operator support
+├── src/test/java/uk/codery/rules/                  # Tests and demo
+│   ├── TriStateEvaluationTest.java                 # Comprehensive test suite
+│   ├── EvaluationSummaryTest.java                  # Summary calculation tests
+│   └── demo/Main.java                              # Demo CLI application
+└── src/test/resources/                             # Test data
+    ├── specification.{json,yaml}                   # Sample specifications
+    ├── document.yaml                               # Sample document
+    └── seed/citizens.json                          # Employment/benefits data
 
 Documentation:
 ├── README.md                              # User-facing documentation
@@ -534,5 +538,5 @@ For questions about this codebase:
 ---
 
 **Last Updated**: 2025-11-14
-**Version**: 0.0.1-SNAPSHOT
+**Version**: 0.1.0-SNAPSHOT
 **Java Version**: 21

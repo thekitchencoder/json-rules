@@ -1,6 +1,12 @@
-package uk.codery.rules;
+package uk.codery.rules.evaluator;
 
 import lombok.extern.slf4j.Slf4j;
+import uk.codery.rules.model.Operator;
+import uk.codery.rules.model.Specification;
+import uk.codery.rules.result.EvaluationOutcome;
+import uk.codery.rules.result.EvaluationResult;
+import uk.codery.rules.result.EvaluationSummary;
+import uk.codery.rules.result.RuleSetResult;
 
 import java.util.ArrayList;
 import java.util.List;

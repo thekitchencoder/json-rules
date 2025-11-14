@@ -1,4 +1,4 @@
-package uk.codery.rules;
+package uk.codery.rules.result;
 
 public interface Result {
     String id();

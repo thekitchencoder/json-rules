@@ -6,7 +6,7 @@
 
     <groupId>uk.codery</groupId>
     <artifactId>rules</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.1.0-SNAPSHOT</version>
     <name>JSON Rule Engine</name>
     <description>Minimal POC Rule evaluation engine</description>
     <packaging>jar</packaging>

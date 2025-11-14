@@ -1,4 +1,4 @@
-package uk.codery.rules;
+package uk.codery.rules.result;
 
 import java.util.List;
 

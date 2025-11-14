@@ -22,14 +22,16 @@ Add to your `pom.xml`:
 <dependency>
     <groupId>uk.codery</groupId>
     <artifactId>rules</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.1.0-SNAPSHOT</version>
 </dependency>
 ```
 
 ### Basic Usage
 
 ```java
-import uk.codery.rules.*;
+import uk.codery.rules.model.*;
+import uk.codery.rules.evaluator.*;
+import uk.codery.rules.result.*;
 
 // Define your rules
 Rule ageCheck = new Rule("age-check",
@@ -345,7 +347,7 @@ Key design principles:
 
 ## Project Status
 
-Current version: **0.0.1-SNAPSHOT**
+Current version: **0.1.0-SNAPSHOT**
 
 Recently implemented:
 - Tri-state evaluation model with UNDETERMINED state

@@ -432,21 +432,18 @@ If you're planning a v1.0 release, consider these breaking changes:
    .map(rule -> this.evaluator.evaluateRule(doc, rule))
    ```
 
-### Remaining Issues
-1. **Package structure** - All classes in single package
+### Completed Improvements ✅
+1. **Package structure** ✅ **COMPLETED in v0.1.0** - Classes organized into logical subpackages
    ```
-   uk.codery.rules.*
+   uk.codery.rules.model.*      (domain models: Rule, RuleSet, Specification, Operator)
+   uk.codery.rules.evaluator.*  (evaluation engine: RuleEvaluator, SpecificationEvaluator)
+   uk.codery.rules.result.*     (result types: EvaluationState, EvaluationResult, etc.)
+   uk.codery.rules.operator.*   (reserved for future custom operator support)
    ```
-   **Better structure for v1.0:**
-   ```
-   uk.codery.rules.api.*        (public API)
-   uk.codery.rules.core.*       (core implementation)
-   uk.codery.rules.operators.*  (operator implementations)
-   uk.codery.rules.builder.*    (builders)
-   ```
-   **Status:** Not critical - current flat structure is acceptable for library of this size
+   **Status:** ✅ Completed - Clean 3-layer package structure implemented
 
-2. **Public record fields** - Direct field access
+### Remaining Issues
+1. **Public record fields** - Direct field access
    ```java
    specification.rules()  // Exposes mutable list
    ```
@@ -551,7 +548,7 @@ examples/
 2. **Breaking changes:** Allowed for v1.0
 3. **License:** MIT
 4. **Publishing target:** No publishing for now (local/internal use)
-5. **Version plan:** 0.0.1-SNAPSHOT → 1.0.0
+5. **Version plan:** 0.1.0-SNAPSHOT → 1.0.0 (package restructure completed in 0.1.0)
 
 **To be decided:**
 - **Priority features:** Which improvements from this roadmap are most important?

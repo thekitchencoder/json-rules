@@ -1,4 +1,4 @@
-package uk.codery.rules;
+package uk.codery.rules.model;
 
 import java.util.Collections;
 import java.util.Map;

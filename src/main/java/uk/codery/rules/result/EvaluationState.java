@@ -1,4 +1,4 @@
-package uk.codery.rules;
+package uk.codery.rules.result;
 
 /**
  * Represents the three possible states of a rule evaluation.

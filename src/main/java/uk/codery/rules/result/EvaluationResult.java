@@ -1,4 +1,6 @@
-package uk.codery.rules;
+package uk.codery.rules.result;
+
+import uk.codery.rules.model.Rule;
 
 import java.util.Collections;
 import java.util.List;

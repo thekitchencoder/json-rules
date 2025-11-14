@@ -1,4 +1,6 @@
-package uk.codery.rules;
+package uk.codery.rules.result;
+
+import uk.codery.rules.model.Operator;
 
 import java.util.List;
 import java.util.stream.Collectors;

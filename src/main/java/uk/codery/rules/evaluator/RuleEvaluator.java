@@ -1,6 +1,9 @@
-package uk.codery.rules;
+package uk.codery.rules.evaluator;
 
 import lombok.extern.slf4j.Slf4j;
+import uk.codery.rules.model.Rule;
+import uk.codery.rules.result.EvaluationResult;
+import uk.codery.rules.result.EvaluationState;
 
 import java.util.*;
 import java.util.regex.Pattern;
