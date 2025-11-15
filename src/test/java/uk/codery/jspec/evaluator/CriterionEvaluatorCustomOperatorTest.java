@@ -178,9 +178,9 @@ class CriterionEvaluatorCustomOperatorTest {
 
         EvaluationResult result = evaluator.evaluateCriterion(doc, criterion);
 
-        // Note: This will NOT match because internal operators override registry operators
-        // This is by design to ensure proper behavior of operators that need internal access
-        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+        // Should MATCH because $eq is not an internal operator, so the custom version is used
+        // Comparison operators ($eq, $ne, $gt, etc.) can be overridden via registry
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
     }
 
     @Test
@@ -213,13 +213,14 @@ class CriterionEvaluatorCustomOperatorTest {
 
         CriterionEvaluator evaluator = new CriterionEvaluator(registry);
 
-        // Internal operators should still work even with empty registry
-        Map<String, Object> doc = Map.of("age", 25);
-        Criterion criterion = new Criterion("age-check", Map.of("age", Map.of("$gte", 18)));
+        // Internal operators ($in, $nin, $exists, $type, $regex, $size, $elemMatch, $all)
+        // are always registered even with empty registry
+        Map<String, Object> doc = Map.of("status", "active");
+        Criterion criterion = new Criterion("status-check", Map.of("status", Map.of("$exists", true)));
 
         EvaluationResult result = evaluator.evaluateCriterion(doc, criterion);
 
-        // Should match because internal operators are always registered
+        // Should match because $exists is an internal operator that's always registered
         assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
     }
 
