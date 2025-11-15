@@ -11,6 +11,132 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+/**
+ * Core evaluation engine for individual {@link Criterion} instances using MongoDB-style query operators.
+ *
+ * <p>The {@code CriterionEvaluator} is responsible for evaluating a single criterion against
+ * a document. It supports 13 built-in MongoDB-style operators and can be extended with custom
+ * operators via {@link uk.codery.jspec.operator.OperatorRegistry}.
+ *
+ * <h2>Supported Operators</h2>
+ *
+ * <h3>Comparison Operators (6)</h3>
+ * <ul>
+ *   <li><b>$eq</b> - Equality: {@code {field: {$eq: value}}}</li>
+ *   <li><b>$ne</b> - Not equal: {@code {field: {$ne: value}}}</li>
+ *   <li><b>$gt</b> - Greater than: {@code {field: {$gt: value}}}</li>
+ *   <li><b>$gte</b> - Greater than or equal: {@code {field: {$gte: value}}}</li>
+ *   <li><b>$lt</b> - Less than: {@code {field: {$lt: value}}}</li>
+ *   <li><b>$lte</b> - Less than or equal: {@code {field: {$lte: value}}}</li>
+ * </ul>
+ *
+ * <h3>Collection Operators (4)</h3>
+ * <ul>
+ *   <li><b>$in</b> - Value in array: {@code {field: {$in: [val1, val2]}}}</li>
+ *   <li><b>$nin</b> - Value not in array: {@code {field: {$nin: [val1, val2]}}}</li>
+ *   <li><b>$all</b> - Array contains all values: {@code {field: {$all: [val1, val2]}}}</li>
+ *   <li><b>$size</b> - Array size: {@code {field: {$size: 5}}}</li>
+ * </ul>
+ *
+ * <h3>Advanced Operators (3)</h3>
+ * <ul>
+ *   <li><b>$exists</b> - Field existence: {@code {field: {$exists: true}}}</li>
+ *   <li><b>$type</b> - Type check: {@code {field: {$type: "string"}}}</li>
+ *   <li><b>$regex</b> - Pattern match: {@code {field: {$regex: "^[a-z]+"}}}</li>
+ *   <li><b>$elemMatch</b> - Array element match: {@code {field: {$elemMatch: {subfield: value}}}}</li>
+ * </ul>
+ *
+ * <h2>Key Features</h2>
+ * <ul>
+ *   <li><b>Tri-State Evaluation:</b> MATCHED / NOT_MATCHED / UNDETERMINED</li>
+ *   <li><b>Graceful Degradation:</b> Invalid operators/types become UNDETERMINED, never throw exceptions</li>
+ *   <li><b>Regex Caching:</b> Thread-safe LRU cache (100 patterns) for ~10-100x speedup</li>
+ *   <li><b>Dot Notation:</b> Navigate nested fields with "address.city" syntax</li>
+ *   <li><b>Custom Operators:</b> Extensible via OperatorRegistry</li>
+ *   <li><b>Performance Optimized:</b> HashSet-based $all operator, cached patterns</li>
+ * </ul>
+ *
+ * <h2>Usage Examples</h2>
+ *
+ * <h3>Basic Criterion Evaluation</h3>
+ * <pre>{@code
+ * CriterionEvaluator evaluator = new CriterionEvaluator();
+ *
+ * Map<String, Object> document = Map.of("age", 25, "status", "active");
+ *
+ * Criterion criterion = Criterion.builder()
+ *     .id("age-check")
+ *     .field("age").gte(18)
+ *     .build();
+ *
+ * EvaluationResult result = evaluator.evaluateCriterion(document, criterion);
+ *
+ * if (result.state() == EvaluationState.MATCHED) {
+ *     System.out.println("Criterion matched!");
+ * } else if (result.state() == EvaluationState.UNDETERMINED) {
+ *     System.out.println("Could not evaluate: " + result.reason());
+ * }
+ * }</pre>
+ *
+ * <h3>Nested Field Navigation (Dot Notation)</h3>
+ * <pre>{@code
+ * Map<String, Object> document = Map.of(
+ *     "user", Map.of(
+ *         "address", Map.of(
+ *             "city", "London"
+ *         )
+ *     )
+ * );
+ *
+ * Criterion criterion = Criterion.builder()
+ *     .id("city-check")
+ *     .field("user.address.city").eq("London")
+ *     .build();
+ *
+ * EvaluationResult result = evaluator.evaluateCriterion(document, criterion);
+ * }</pre>
+ *
+ * <h3>Custom Operators</h3>
+ * <pre>{@code
+ * // Create registry with custom operator
+ * OperatorRegistry registry = OperatorRegistry.withDefaults();
+ * registry.register("$length", (value, operand) -> {
+ *     if (!(value instanceof String) || !(operand instanceof Number)) {
+ *         return false;
+ *     }
+ *     return ((String) value).length() == ((Number) operand).intValue();
+ * });
+ *
+ * // Use custom registry
+ * CriterionEvaluator evaluator = new CriterionEvaluator(registry);
+ * }</pre>
+ *
+ * <h2>Tri-State Evaluation Model</h2>
+ *
+ * <p>Every criterion evaluation produces one of three states:
+ * <ul>
+ *   <li><b>MATCHED</b> - Criterion evaluated successfully, condition is TRUE</li>
+ *   <li><b>NOT_MATCHED</b> - Criterion evaluated successfully, condition is FALSE</li>
+ *   <li><b>UNDETERMINED</b> - Could not evaluate (missing data, invalid operator, type mismatch)</li>
+ * </ul>
+ *
+ * <p>This model enables graceful degradation - one bad criterion never stops evaluation.
+ *
+ * <h2>Thread Safety</h2>
+ * <p>This class is thread-safe:
+ * <ul>
+ *   <li>Uses synchronized LRU cache for regex patterns</li>
+ *   <li>No mutable shared state</li>
+ *   <li>Safe for concurrent evaluations</li>
+ * </ul>
+ *
+ * @see Criterion
+ * @see EvaluationResult
+ * @see EvaluationState
+ * @see uk.codery.jspec.operator.OperatorRegistry
+ * @see uk.codery.jspec.operator.OperatorHandler
+ * @since 0.1.0
+ */
 @Slf4j
 public class CriterionEvaluator {
     private final Map<String, OperatorHandler> operators = new HashMap<>();
