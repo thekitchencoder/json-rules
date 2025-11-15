@@ -416,5 +416,54 @@ public class CriterionBuilder {
             parent.query.put(fieldName, new HashMap<>(fieldQuery));
             return this;
         }
+
+        /**
+         * Starts building a query for another field.
+         *
+         * <p>Convenience method to chain multiple field definitions without
+         * going back through the parent builder.
+         *
+         * <h3>Example:</h3>
+         * <pre>{@code
+         * Criterion criterion = Criterion.builder()
+         *     .id("validation")
+         *     .field("age").gte(18)
+         *     .field("status").eq("active")
+         *     .field("email").exists(true)
+         *     .build();
+         * }</pre>
+         *
+         * @param fieldName the next field name to query
+         * @return a new FieldBuilder for the specified field
+         */
+        public FieldBuilder field(String fieldName) {
+            // Finalize current field first
+            parent.query.put(this.fieldName, new HashMap<>(fieldQuery));
+            // Start new field
+            return parent.field(fieldName);
+        }
+
+        /**
+         * Builds the Criterion instance.
+         *
+         * <p>Convenience method that finalizes the current field and builds
+         * the criterion without needing to return to the parent builder.
+         *
+         * <h3>Example:</h3>
+         * <pre>{@code
+         * Criterion criterion = Criterion.builder()
+         *     .id("age-check")
+         *     .field("age").gte(18)
+         *     .build();
+         * }</pre>
+         *
+         * @return the constructed Criterion
+         */
+        public Criterion build() {
+            // Finalize current field
+            parent.query.put(fieldName, new HashMap<>(fieldQuery));
+            // Delegate to parent
+            return parent.build();
+        }
     }
 }
