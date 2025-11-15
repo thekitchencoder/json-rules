@@ -1,10 +1,10 @@
 # CLAUDE.md - AI Assistant Context
 
-This document provides context for AI assistants (like Claude) working with the JSON Rules Engine codebase.
+This document provides context for AI assistants (like Claude) working with the JSON Specification Evalutor codebase.
 
 ## Project Overview
 
-**JSON Rules Engine** is a lightweight Java 21 library for evaluating business rules against JSON/YAML documents using MongoDB-style operators. The codebase is intentionally minimal (~757 lines) with a focus on clean architecture and zero framework dependencies.
+**JSON Specification Evalutor** is a lightweight Java 21 library for evaluating business criteria against JSON/YAML documents using MongoDB-style operators. The codebase is intentionally minimal (~757 lines) with a focus on clean architecture and zero framework dependencies.
 
 ### Key Characteristics
 
@@ -17,26 +17,26 @@ This document provides context for AI assistants (like Claude) working with the 
 ## Codebase Structure
 
 ```
-json-rules/
+jspec/
 ├── pom.xml                                          # Maven configuration
-├── src/main/java/uk/codery/rules/                  # Core library (12 classes, 757 lines)
+├── src/main/java/uk/codery/jspec/                  # Core library (12 classes, 757 lines)
 │   ├── model/                                      # Domain models (what users create)
 │   │   ├── Rule.java                               # [10 lines] Rule definition record
-│   │   ├── RuleSet.java                            # [9 lines] Grouped rules with AND/OR
-│   │   ├── Specification.java                      # [6 lines] Collection of rules
+│   │   ├── RuleSet.java                            # [9 lines] Grouped criteria with AND/OR
+│   │   ├── Specification.java                      # [6 lines] Collection of criteria
 │   │   └── Operator.java                           # [6 lines] AND/OR enum
 │   ├── evaluator/                                  # Evaluation engine (what users call)
 │   │   ├── RuleEvaluator.java                      # [418 lines] Query matching engine
 │   │   └── SpecificationEvaluator.java             # [49 lines] Orchestrates evaluation
 │   ├── result/                                     # Result types (what users receive)
 │   │   ├── EvaluationState.java                    # [40 lines] MATCHED/NOT_MATCHED/UNDETERMINED
-│   │   ├── EvaluationResult.java                   # [106 lines] Individual rule result
+│   │   ├── EvaluationResult.java                   # [106 lines] Individual criterion result
 │   │   ├── EvaluationOutcome.java                  # [16 lines] Overall specification result
 │   │   ├── EvaluationSummary.java                  # [60 lines] Evaluation statistics
 │   │   ├── RuleSetResult.java                      # [30 lines] RuleSet evaluation result
 │   │   └── Result.java                             # [7 lines] Interface for results
 │   └── operator/                                   # Future: custom operator support
-├── src/test/java/uk/codery/rules/                  # Tests and demo
+├── src/test/java/uk/codery/jspec/                  # Tests and demo
 │   ├── TriStateEvaluationTest.java                 # Comprehensive test suite
 │   ├── EvaluationSummaryTest.java                  # Summary calculation tests
 │   └── demo/Main.java                              # Demo CLI application
@@ -60,17 +60,17 @@ Documentation:
 
 ### 1. Tri-State Evaluation Model
 
-Every rule evaluation produces one of three states:
+Every criterion evaluation produces one of three states:
 
 - **MATCHED** - Rule evaluated successfully, condition is TRUE
 - **NOT_MATCHED** - Rule evaluated successfully, condition is FALSE
-- **UNDETERMINED** - Could not evaluate (missing data, invalid rule, type mismatch)
+- **UNDETERMINED** - Could not evaluate (missing data, invalid criterion, type mismatch)
 
 This is the core innovation that enables graceful degradation.
 
 ### 2. Graceful Degradation
 
-**Design Contract**: Rules never fail hard. One bad rule never stops specification evaluation.
+**Design Contract**: Rules never fail hard. One bad criterion never stops specification evaluation.
 
 Implementation:
 - Unknown operators → UNDETERMINED + log warning
@@ -102,7 +102,7 @@ Uses dot notation to traverse nested maps:
 **Purpose**: Core query evaluation engine
 
 **Key Methods**:
-- `evaluateRule(document, rule)` - Main entry point for single rule
+- `evaluateRule(document, criterion)` - Main entry point for single criterion
 - `evaluate(document, query)` - Recursive query evaluation
 - `navigate(document, path)` - Deep document navigation with dot notation
 - Operator handlers (lines 50-100) - Lambda-based operator implementations
@@ -122,13 +122,13 @@ Uses dot notation to traverse nested maps:
 **Purpose**: Orchestrates parallel evaluation of specifications
 
 **Key Methods**:
-- `evaluate(document, specification)` - Evaluates all rules and rulesets
+- `evaluate(document, specification)` - Evaluates all criteria and rulesets
 - Uses parallel streams for concurrent evaluation
-- Caches rule results for efficient ruleset evaluation
+- Caches criterion results for efficient ruleset evaluation
 
 **Architecture**:
 - Line 15: Creates internal RuleEvaluator instance
-- Lines 16-22: Parallel evaluation of all rules
+- Lines 16-22: Parallel evaluation of all criteria
 - Lines 24-35: Sequential evaluation of rulesets (uses cached results)
 - Lines 37-46: Build EvaluationOutcome with summary
 
@@ -136,12 +136,12 @@ Uses dot notation to traverse nested maps:
 
 ### EvaluationResult.java (106 lines)
 
-**Purpose**: Represents individual rule evaluation outcome
+**Purpose**: Represents individual criterion evaluation outcome
 
 **Key Fields**:
 ```java
 record EvaluationResult(
-    Rule rule,
+    Rule criterion,
     EvaluationState state,      // MATCHED/NOT_MATCHED/UNDETERMINED
     List<String> missingPaths,  // Tracks missing document fields
     String failureReason        // Explains UNDETERMINED state
@@ -149,10 +149,10 @@ record EvaluationResult(
 ```
 
 **Factory Methods**:
-- `matched(rule)` - Successful match
-- `notMatched(rule)` - Evaluated but didn't match
-- `undetermined(rule, reason, paths)` - Couldn't evaluate
-- `missing(rule)` - Rule not found in specification
+- `matched(criterion)` - Successful match
+- `notMatched(criterion)` - Evaluated but didn't match
+- `undetermined(criterion, reason, paths)` - Couldn't evaluate
+- `missing(criterion)` - Rule not found in specification
 
 **Important Methods**:
 - `matched()` - Returns true only if state == MATCHED
@@ -165,8 +165,8 @@ All domain models use Java records (immutable by default):
 
 ```java
 record Rule(String id, Map<String, Object> query)
-record RuleSet(String id, Operator operator, List<String> rules)
-record Specification(String id, List<Rule> rules, List<RuleSet> ruleSets)
+record RuleSet(String id, Operator operator, List<String> criteria)
+record Specification(String id, List<Rule> criteria, List<RuleSet> criteriaGroups)
 ```
 
 **Design Choice**: Records provide immutability, structural equality, and clean toString() for free.
@@ -190,7 +190,7 @@ record Specification(String id, List<Rule> rules, List<RuleSet> ruleSets)
 To add a new operator to `RuleEvaluator`:
 
 ```java
-// In RuleEvaluator constructor (around line 50)
+// In CriterionEvaluator constructor (around line 50)
 operators.put("$myOperator", (val, operand) -> {
     // Type checking (prevent ClassCastException)
     if (!(operand instanceof ExpectedType)) {
@@ -214,8 +214,8 @@ See `TriStateEvaluationTest.java` for examples:
 ```java
 @Test
 void testOperator_shouldMatch() {
-    Rule rule = new Rule("test", Map.of("field", Map.of("$operator", value)));
-    EvaluationResult result = evaluator.evaluateRule(document, rule);
+    Rule criterion = new Rule("test", Map.of("field", Map.of("$junction", value)));
+    EvaluationResult result = evaluator.evaluateRule(document, criterion);
 
     assertEquals(EvaluationState.MATCHED, result.state());
 }
@@ -232,9 +232,9 @@ void testOperator_shouldBeUndetermined() {
 
 - **WARN**: Unknown operators, type mismatches, invalid patterns
 - **INFO**: Specification evaluation started/completed
-- **DEBUG**: Individual rule evaluations
+- **DEBUG**: Individual criterion evaluations
 - **TRACE**: Detailed matching logic
-- **ERROR**: Never used (rules don't error, they become UNDETERMINED)
+- **ERROR**: Never used (criteria don't error, they become UNDETERMINED)
 
 ## Common Tasks
 
@@ -248,7 +248,7 @@ mvn test -Dtest=TriStateEvaluationTest     # Run specific test
 ### Running Demo
 
 ```bash
-mvn test-compile exec:java -Dexec.mainClass="uk.codery.rules.demo.Main"
+mvn test-compile exec:java -Dexec.mainClass="uk.codery.jspec.demo.Main"
 ```
 
 ### Building
@@ -283,11 +283,11 @@ See IMPROVEMENT_ROADMAP.md § 2.1 for details.
 
 ### 2. Builder API (Future)
 
-Planned fluent API for easier rule construction:
+Planned fluent API for easier criterion construction:
 
 ```java
 // Future API
-Rule rule = Rule.builder()
+Rule criterion = Rule.builder()
     .id("age-check")
     .field("age").gte(18)
     .build();
@@ -386,8 +386,8 @@ A: Ensure documents are thread-safe (use immutable collections).
 
 ### Debugging Tips
 
-1. **Enable DEBUG logging**: Set SLF4J level to DEBUG to see individual rule evaluations
-2. **Check evaluation summary**: `outcome.summary()` shows counts of UNDETERMINED rules
+1. **Enable DEBUG logging**: Set SLF4J level to DEBUG to see individual criterion evaluations
+2. **Check evaluation summary**: `outcome.summary()` shows counts of UNDETERMINED criteria
 3. **Inspect failure reasons**: `result.failureReason()` explains why evaluation failed
 4. **Review missing paths**: `result.missingPaths()` lists absent document fields
 
@@ -516,8 +516,8 @@ When working with this codebase, consider:
 ### Why Graceful Degradation?
 
 - Real-world data is messy and incomplete
-- Business rules evaluation shouldn't halt on missing fields
-- Users need to know which rules couldn't evaluate
+- Business criteria evaluation shouldn't halt on missing fields
+- Users need to know which criteria couldn't evaluate
 - Partial results are better than no results
 
 ### Why Spring-Independent?

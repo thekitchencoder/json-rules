@@ -1,8 +1,8 @@
-# JSON Rules Engine - Improvement Roadmap
+# JSON Specification Evalutor - Improvement Roadmap
 
 ## Executive Summary
 
-Your JSON Rules Engine is a **production-ready, Spring-independent library** with minimal dependencies (Jackson YAML + Lombok + SLF4J). The codebase consists of ~757 lines of well-architected Java 21 code using modern features (records, streams, functional programming).
+Your JSON Specification Evalutor is a **production-ready, Spring-independent library** with minimal dependencies (Jackson YAML + Lombok + SLF4J). The codebase consists of ~757 lines of well-architected Java 21 code using modern features (records, streams, functional programming).
 
 **Current State (Updated 2025-11-14):**
 - ✅ Zero Spring coupling
@@ -20,7 +20,7 @@ Your JSON Rules Engine is a **production-ready, Spring-independent library** wit
 
 ## What Changed Since Original Roadmap
 
-This roadmap has been updated to reflect the significant progress made on the JSON Rules Engine. Here's a quick summary:
+This roadmap has been updated to reflect the significant progress made on the JSON Specification Evalutor. Here's a quick summary:
 
 **Major Achievements:**
 - ✅ **Testing** - 9 comprehensive test files created (was: "No test coverage")
@@ -50,7 +50,7 @@ This roadmap has been updated to reflect the significant progress made on the JS
   - Edge cases: null values, type mismatches, nested structures
 
 - [x] **Unit tests for SpecificationEvaluator** - `SpecificationEvaluatorTest.java` created
-  - Parallel rule evaluation
+  - Parallel criterion evaluation
   - RuleSet evaluation with AND/OR operators
   - Result caching behavior
   - Thread safety verification
@@ -98,7 +98,7 @@ This roadmap has been updated to reflect the significant progress made on the JS
   - Invalid regex → UNDETERMINED + warning log
 
 **Impact:** Better than exception-based approach because:
-- One bad rule never stops evaluation of other rules
+- One bad criterion never stops evaluation of other criteria
 - Partial evaluation results are usable
 - Clear visibility into what couldn't be evaluated
 - Production-ready resilience
@@ -135,7 +135,7 @@ public class OperatorRegistry {
     public Set<String> availableOperators() { }
 }
 
-// TODO: Update RuleEvaluator constructor
+// TODO: Update CriterionEvaluator constructor
 public RuleEvaluator(OperatorRegistry registry) {
     this.operators.putAll(registry.getAll());
 }
@@ -157,13 +157,13 @@ public RuleEvaluator(OperatorRegistry registry) {
 **Current approach:**
 ```java
 // Verbose but works
-Rule rule = new Rule("age-check", Map.of("age", Map.of("$gte", 18)));
+Rule criterion = new Rule("age-check", Map.of("age", Map.of("$gte", 18)));
 ```
 
 **Proposed approach:**
 ```java
 // More readable
-Rule rule = Rule.builder()
+Rule criterion = Rule.builder()
     .id("age-check")
     .field("age").gte(18)
     .build();
@@ -253,15 +253,15 @@ Rule rule = Rule.builder()
 - [ ] **Add package-info.java** - Not created yet
   ```java
   /**
-   * JSON Rules Engine - MongoDB-style query evaluation for Java.
+   * JSON Specification Evalutor - MongoDB-style query evaluation for Java.
    *
    * <p>Main entry points:
    * <ul>
    *   <li>{@link SpecificationEvaluator} - Evaluate specifications
-   *   <li>{@link RuleEvaluator} - Evaluate individual rules
+   *   <li>{@link RuleEvaluator} - Evaluate individual criteria
    * </ul>
    */
-  package uk.codery.rules;
+  package uk.codery.jspec;
   ```
 
 **Priority:** Medium - Current JavaDoc is sufficient for basic usage, but could be enhanced
@@ -300,7 +300,7 @@ Rule rule = Rule.builder()
   - Demonstrate REST API integration
   - Show YAML configuration loading
 
-**Note:** Current demo exists at `src/test/java/uk/codery/rules/demo/Main.java` but dedicated examples would be helpful
+**Note:** Current demo exists at `src/test/java/uk/codery/jspec/demo/Main.java` but dedicated examples would be helpful
 
 **Priority:** Low - README provides Spring configuration example, and demo code exists
 
@@ -360,7 +360,7 @@ docs/
 - [ ] **Add generic document type**
   ```java
   public class TypedRuleEvaluator<T> {
-      public EvaluationResult evaluateRule(T document, Rule rule) { }
+      public EvaluationResult evaluateRule(T document, Rule criterion) { }
   }
   ```
 
@@ -429,23 +429,23 @@ If you're planning a v1.0 release, consider these breaking changes:
 1. **`SpecificationEvaluator.java:24`** ✅ **FIXED** - Now uses `this.evaluator` instead of creating new instance
    ```java
    // FIXED: Now correctly uses this.evaluator
-   .map(rule -> this.evaluator.evaluateRule(doc, rule))
+   .map(criterion -> this.evaluator.evaluateRule(doc, criterion))
    ```
 
 ### Completed Improvements ✅
 1. **Package structure** ✅ **COMPLETED in v0.1.0** - Classes organized into logical subpackages
    ```
-   uk.codery.rules.model.*      (domain models: Rule, RuleSet, Specification, Operator)
-   uk.codery.rules.evaluator.*  (evaluation engine: RuleEvaluator, SpecificationEvaluator)
-   uk.codery.rules.result.*     (result types: EvaluationState, EvaluationResult, etc.)
-   uk.codery.rules.operator.*   (reserved for future custom operator support)
+   uk.codery.jspec.model.*      (domain models: Rule, RuleSet, Specification, Operator)
+   uk.codery.jspec.evaluator.*  (evaluation engine: RuleEvaluator, SpecificationEvaluator)
+   uk.codery.jspec.result.*     (result types: EvaluationState, EvaluationResult, etc.)
+   uk.codery.jspec.operator.*   (reserved for future custom operator support)
    ```
    **Status:** ✅ Completed - Clean 3-layer package structure implemented
 
 ### Remaining Issues
 1. **Public record fields** - Direct field access
    ```java
-   specification.rules()  // Exposes mutable list
+   specification.criteria()  // Exposes mutable list
    ```
    **Fix:** Return unmodifiable copies or document immutability expectations
    **Status:** Java records provide immutability by contract, but consider defensive copies
@@ -507,7 +507,7 @@ If you're planning a v1.0 release, consider these breaking changes:
 
 ### New Files
 ```
-src/main/java/uk/codery/rules/
+src/main/java/uk/codery/jspec/
 ├── OperatorHandler.java (extract from inner interface)
 ├── OperatorRegistry.java
 ├── builder/
@@ -519,7 +519,7 @@ src/main/java/uk/codery/rules/
 │   ├── InvalidOperatorException.java
 │   └── InvalidQueryException.java
 
-src/test/java/uk/codery/rules/
+src/test/java/uk/codery/jspec/
 ├── RuleEvaluatorTest.java
 ├── SpecificationEvaluatorTest.java
 ├── operators/ (test per operator)

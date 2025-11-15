@@ -36,7 +36,7 @@ My analysis confirms the specific technical details outlined in the roadmap.
 The investigation also validates the potential issues listed in the roadmap:
 
 1.  **`SpecificationEvaluator` Bug:** The bug where a new `RuleEvaluator` is instantiated, ignoring the one provided in the constructor, is present in the code.
-2.  **Package Structure:** All classes currently reside in a single `uk.codery.rules` package. The roadmap's suggestion to restructure into `api`, `core`, etc., is a valid architectural improvement.
+2.  **Package Structure:** All classes currently reside in a single `uk.codery.jspec` package. The roadmap's suggestion to restructure into `api`, `core`, etc., is a valid architectural improvement.
 3.  **Immutability:** Records are used, but the collections they contain are not always returned as unmodifiable, presenting a potential for unintended side effects.
 
 ## Conclusion

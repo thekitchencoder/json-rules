@@ -1,4 +1,4 @@
-# JSON Rules Engine - TODO List
+# JSON Specification Evalutor - TODO List
 
 ## 🎯 Quick Summary
 
@@ -34,7 +34,7 @@
 - [ ] Handle type mismatches → UNDETERMINED + warn log
 - [ ] Handle invalid regex patterns → UNDETERMINED + warn log
 - [ ] Add SLF4J logging (replace System.err.println)
-- [ ] Add evaluation summary tracking (determined vs undetermined rules)
+- [ ] Add evaluation summary tracking (determined vs undetermined criteria)
 - [ ] FUTURE: Add strict mode (throw exceptions for development)
 
 ---
@@ -134,10 +134,10 @@
 ### Package Reorganization (Breaking Change)
 Consider reorganizing for v1.0:
 ```
-uk.codery.rules.api.*        → Public API (interfaces, builders)
-uk.codery.rules.core.*       → Core implementation
-uk.codery.rules.model.*  → Operator implementations
-uk.codery.rules.exceptions.* → Exception hierarchy
+uk.codery.jspec.api.*        → Public API (interfaces, builders)
+uk.codery.jspec.core.*       → Core implementation
+uk.codery.jspec.model.*  → Operator implementations
+uk.codery.jspec.exceptions.* → Exception hierarchy
 ```
 
 ### Immutability Improvements
@@ -210,7 +210,7 @@ After completing Priorities 1-4, you'll have:
 ## 📝 Files to Create
 
 ```
-src/main/java/uk/codery/rules/
+src/main/java/uk/codery/jspec/
 ├── OperatorHandler.java
 ├── OperatorRegistry.java
 ├── builder/
@@ -222,7 +222,7 @@ src/main/java/uk/codery/rules/
     ├── InvalidOperatorException.java
     └── InvalidQueryException.java
 
-src/test/java/uk/codery/rules/
+src/test/java/uk/codery/jspec/
 ├── RuleEvaluatorTest.java
 ├── SpecificationEvaluatorTest.java
 └── operators/

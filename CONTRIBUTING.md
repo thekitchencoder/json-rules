@@ -1,6 +1,6 @@
-# Contributing to JSON Rules Engine
+# Contributing to JSON Specification Evalutor
 
-Thank you for considering contributing to the JSON Rules Engine! This document provides guidelines and information for contributors.
+Thank you for considering contributing to the JSON Specification Evalutor! This document provides guidelines and information for contributors.
 
 ## Table of Contents
 
@@ -52,11 +52,11 @@ Thank you for considering contributing to the JSON Rules Engine! This document p
 
 ```bash
 # Clone your fork
-git clone https://github.com/YOUR_USERNAME/json-rules.git
-cd json-rules
+git clone https://github.com/YOUR_USERNAME/jspec.git
+cd jspec
 
 # Add upstream remote
-git remote add upstream https://github.com/thekitchencoder/json-rules.git
+git remote add upstream https://github.com/thekitchencoder/jspec.git
 
 # Install dependencies and build
 mvn clean install
@@ -151,7 +151,7 @@ public class Example
 - **Methods**: camelCase (`evaluateRule`, `navigate`)
 - **Constants**: UPPER_SNAKE_CASE (`MAX_DEPTH`, `DEFAULT_SIZE`)
 - **Variables**: camelCase (`evaluator`, `ruleResult`)
-- **Packages**: lowercase (`uk.codery.rules`)
+- **Packages**: lowercase (`uk.codery.jspec`)
 
 #### Code Organization
 
@@ -249,11 +249,11 @@ Use AAA pattern (Arrange, Act, Assert):
 void evaluateRule_withMatchingQuery_shouldReturnMatched() {
     // Arrange
     Map<String, Object> document = Map.of("age", 25);
-    Rule rule = new Rule("age-check", Map.of("age", Map.of("$gte", 18)));
+    Rule criterion = new Rule("age-check", Map.of("age", Map.of("$gte", 18)));
     RuleEvaluator evaluator = new RuleEvaluator();
 
     // Act
-    EvaluationResult result = evaluator.evaluateRule(document, rule);
+    EvaluationResult result = evaluator.evaluateRule(document, criterion);
 
     // Assert
     assertEquals(EvaluationState.MATCHED, result.state());
@@ -291,7 +291,7 @@ Test components working together:
 void evaluateSpecification_withMultipleRules_shouldEvaluateAll() {
     Specification spec = new Specification(
         "test",
-        List.of(rule1, rule2, rule3),
+        List.of(criterion1, criterion2, criterion3),
         List.of()
     );
 
@@ -528,4 +528,4 @@ Contributors will be recognized in:
 - CHANGELOG.md (for significant contributions)
 - Release notes
 
-Thank you for contributing to JSON Rules Engine!
+Thank you for contributing to JSON Specification Evalutor!

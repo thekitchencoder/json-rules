@@ -1,14 +1,14 @@
-# JSON Rules Engine
+# JSON Specification Evalutor
 
-A lightweight, Spring-independent Java library for evaluating business rules against JSON/YAML documents using MongoDB-style query operators.
+A lightweight, Spring-independent Java library for evaluating business criteria against JSON/YAML documents using MongoDB-style query operators.
 
 ## Features
 
 - **13 MongoDB-style operators** - Familiar query syntax for developers
 - **Tri-state evaluation model** - Distinguishes between MATCHED, NOT_MATCHED, and UNDETERMINED states
-- **Graceful error handling** - One failed rule never stops evaluation of others
+- **Graceful error handling** - One failed criterion never stops evaluation of others
 - **Zero framework dependencies** - Works with or without Spring
-- **Thread-safe parallel evaluation** - Efficient processing of multiple rules
+- **Thread-safe parallel evaluation** - Efficient processing of multiple criteria
 - **Deep document navigation** - Query nested structures with dot notation
 - **Java 21** - Modern language features with record-based immutable design
 
@@ -21,7 +21,7 @@ Add to your `pom.xml`:
 ```xml
 <dependency>
     <groupId>uk.codery</groupId>
-    <artifactId>rules</artifactId>
+    <artifactId>criteria</artifactId>
     <version>0.1.0-SNAPSHOT</version>
 </dependency>
 ```
@@ -29,38 +29,47 @@ Add to your `pom.xml`:
 ### Basic Usage
 
 ```java
-import uk.codery.rules.model.*;
-import uk.codery.rules.evaluator.*;
-import uk.codery.rules.result.*;
+import uk.codery.jspec.model.*;
+import uk.codery.jspec.evaluator.*;
+import uk.codery.jspec.result.*;
 
-// Define your rules
-Rule ageCheck = new Rule("age-check",
-    Map.of("age", Map.of("$gte", 18)));
+// Define your criteria
+Criterion ageCheck = new Criterion("age-check",
+        Map.of("age", Map.of("$gte", 18)));
 
-Rule statusCheck = new Rule("status-check",
-    Map.of("status", Map.of("$eq", "ACTIVE")));
+        Criterion statusCheck = new Criterion("status-check",
+                Map.of("status", Map.of("$eq", "ACTIVE")));
 
-// Create specification
-Specification spec = new Specification(
-    "eligibility-check",
-    List.of(ageCheck, statusCheck),
-    List.of()
-);
+        // Create specification
+        Specification spec = new Specification(
+                "eligibility-check",
+                List.of(ageCheck, statusCheck),
+                List.of()
+        );
 
-// Evaluate against document
-Map<String, Object> document = Map.of(
-    "age", 25,
-    "status", "ACTIVE"
-);
+        // Evaluate against document
+        Map<String, Object> document = Map.of(
+                "age", 25,
+                "status", "ACTIVE"
+        );
 
-SpecificationEvaluator evaluator = new SpecificationEvaluator();
-EvaluationOutcome outcome = evaluator.evaluate(document, spec);
+        SpecificationEvaluator evaluator = new SpecificationEvaluator();
+        EvaluationOutcome outcome = evaluator.evaluate(document, spec);
 
 // Check results
-for (EvaluationResult result : outcome.ruleResults()) {
-    System.out.println(result.rule().id() + ": " +
-        (result.matched() ? "MATCHED" : "NOT MATCHED"));
-}
+for(
+        EvaluationResult result :outcome.
+
+        ruleResults()){
+        System.out.
+
+        println(result.criterion().
+
+        id() +": "+
+        (result.
+
+        matched() ?"MATCHED":"NOT MATCHED"));
+        }
 ```
 
 ### Using YAML Specifications
@@ -68,7 +77,7 @@ for (EvaluationResult result : outcome.ruleResults()) {
 ```yaml
 # specification.yaml
 id: employment-eligibility
-rules:
+criteria:
   - id: uc-active
     query:
       benefits:
@@ -80,10 +89,10 @@ rules:
         universal_credit:
           duration_months:
             $gte: 6
-ruleSets:
+criteriaGroups:
   - id: restart-program
     operator: AND
-    rules: [uc-active, time-on-uc]
+    criteria: [uc-active, time-on-uc]
 ```
 
 ```java
@@ -174,7 +183,7 @@ Rules become UNDETERMINED when:
 - Any evaluation error
 
 ```java
-EvaluationResult result = evaluator.evaluateRule(document, rule);
+EvaluationResult result = evaluator.evaluateRule(document, criterion);
 
 switch (result.state()) {
     case MATCHED -> System.out.println("Rule passed");
@@ -191,20 +200,20 @@ switch (result.state()) {
 
 ## Rule Sets
 
-Combine multiple rules with AND/OR logic:
+Combine multiple criteria with AND/OR logic:
 
 ```java
-Rule rule1 = new Rule("r1", Map.of("age", Map.of("$gte", 18)));
-Rule rule2 = new Rule("r2", Map.of("status", Map.of("$eq", "ACTIVE")));
+Rule criterion1 = new Rule("r1", Map.of("age", Map.of("$gte", 18)));
+Rule criterion2 = new Rule("r2", Map.of("status", Map.of("$eq", "ACTIVE")));
 
-// Both rules must match (AND)
+// Both criteria must match (AND)
 RuleSet andSet = new RuleSet(
     "adult-and-active",
     Operator.AND,
     List.of("r1", "r2")
 );
 
-// Either rule must match (OR)
+// Either criterion must match (OR)
 RuleSet orSet = new RuleSet(
     "adult-or-active",
     Operator.OR,
@@ -213,7 +222,7 @@ RuleSet orSet = new RuleSet(
 
 Specification spec = new Specification(
     "eligibility",
-    List.of(rule1, rule2),
+    List.of(criterion1, criterion2),
     List.of(andSet, orSet)
 );
 ```
@@ -235,7 +244,7 @@ Map<String, Object> document = Map.of(
 );
 
 // Query nested field
-Rule rule = new Rule("city-check",
+Rule criterion = new Rule("city-check",
     Map.of("user.profile.address.city", Map.of("$eq", "London"))
 );
 ```
@@ -248,7 +257,7 @@ Get statistics about evaluation outcomes:
 EvaluationOutcome outcome = evaluator.evaluate(document, spec);
 EvaluationSummary summary = outcome.summary();
 
-System.out.println("Total rules: " + summary.totalRules());
+System.out.println("Total criteria: " + summary.totalRules());
 System.out.println("Matched: " + summary.matchedRules());
 System.out.println("Not matched: " + summary.notMatchedRules());
 System.out.println("Undetermined: " + summary.undeterminedRules());
@@ -278,22 +287,22 @@ for (int i = 0; i < 100; i++) {
 The engine follows a **graceful degradation** approach:
 
 - Rules never throw exceptions that halt evaluation
-- One bad rule never prevents evaluation of other rules
+- One bad criterion never prevents evaluation of other criteria
 - All failures are logged via SLF4J for debugging
 - Missing data results in UNDETERMINED state, not errors
 - Partial evaluation is clearly indicated in results
 
 This design ensures that:
 - Specifications are evaluated completely even with data issues
-- You can identify which rules couldn't be evaluated
+- You can identify which criteria couldn't be evaluated
 - The system degrades gracefully rather than failing hard
 
 ## Building from Source
 
 ```bash
 # Clone repository
-git clone https://github.com/thekitchencoder/json-rules.git
-cd json-rules
+git clone https://github.com/thekitchencoder/jspec.git
+cd jspec
 
 # Build with Maven
 mvn clean install
@@ -318,7 +327,7 @@ mvn test
 Run the demo CLI to see the engine in action:
 
 ```bash
-mvn test-compile exec:java -Dexec.mainClass="uk.codery.rules.demo.Main"
+mvn test-compile exec:java -Dexec.mainClass="uk.codery.jspec.demo.Main"
 ```
 
 This evaluates sample specifications against test documents using both JSON and YAML formats.
@@ -327,7 +336,7 @@ This evaluates sample specifications against test documents using both JSON and 
 
 The engine has a clean three-layer architecture:
 
-1. **Data Layer** - Immutable records for specifications, rules, and documents
+1. **Data Layer** - Immutable records for specifications, criteria, and documents
 2. **Evaluation Layer** - `RuleEvaluator` (operators) and `SpecificationEvaluator` (orchestration)
 3. **Result Layer** - Tri-state results with detailed failure reasons
 
@@ -340,10 +349,10 @@ Key design principles:
 ## Use Cases
 
 - **Benefits eligibility** - Determine program qualification based on citizen data
-- **Business rule validation** - Enforce complex business rules on documents
+- **Business criterion validation** - Enforce complex business criteria on documents
 - **Policy enforcement** - Check compliance against defined policies
 - **Dynamic filtering** - Filter data based on user-defined criteria
-- **Form validation** - Validate complex forms with interdependent rules
+- **Form validation** - Validate complex forms with interdependent criteria
 
 ## Project Status
 
@@ -377,7 +386,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 For issues, questions, or suggestions:
 - Open an issue on GitHub
 - Review existing documentation
-- Check the demo examples in `src/test/java/uk/codery/rules/demo/`
+- Check the demo examples in `src/test/java/uk/codery/jspec/demo/`
 
 ## Acknowledgments
 
