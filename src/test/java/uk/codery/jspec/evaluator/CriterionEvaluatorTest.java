@@ -33,7 +33,10 @@ class CriterionEvaluatorTest {
     @Test
     void navigation_withSimpleField_shouldWork() {
         Map<String, Object> doc = Map.of("age", 25);
-        Criterion criterion = new Criterion("test", Map.of("age", Map.of("$eq", 25)));
+        Criterion criterion = Criterion.builder()
+                .id("test")
+                .field("age").eq(25)
+                .build();
 
         EvaluationResult result = evaluator.evaluateCriterion(doc, criterion);
 
@@ -104,11 +107,12 @@ class CriterionEvaluatorTest {
             "age", 25,
             "status", "ACTIVE"
         );
-        Criterion criterion = new Criterion("test", Map.of(
-            "name", Map.of("$eq", "John"),
-            "age", Map.of("$gte", 18),
-            "status", Map.of("$eq", "ACTIVE")
-        ));
+        Criterion criterion = Criterion.builder()
+                .id("test")
+                .field("name").eq("John")
+                .field("age").gte(18)
+                .field("status").eq("ACTIVE")
+                .build();
 
         EvaluationResult result = evaluator.evaluateCriterion(doc, criterion);
 
@@ -122,11 +126,12 @@ class CriterionEvaluatorTest {
             "age", 25,
             "status", "INACTIVE"
         );
-        Criterion criterion = new Criterion("test", Map.of(
-            "name", Map.of("$eq", "John"),
-            "age", Map.of("$gte", 18),
-            "status", Map.of("$eq", "ACTIVE")
-        ));
+        Criterion criterion = Criterion.builder()
+                .id("test")
+                .field("name").eq("John")
+                .field("age").gte(18)
+                .field("status").eq("ACTIVE")
+                .build();
 
         EvaluationResult result = evaluator.evaluateCriterion(doc, criterion);
 
@@ -238,7 +243,10 @@ class CriterionEvaluatorTest {
     @Test
     void unknownOperator_shouldReturnUndetermined() {
         Map<String, Object> doc = Map.of("age", 25);
-        Criterion criterion = new Criterion("test", Map.of("age", Map.of("$unknown", 18)));
+        Criterion criterion = Criterion.builder()
+                .id("test")
+                .field("age").operator("$unknown", 18)
+                .build();
 
         EvaluationResult result = evaluator.evaluateCriterion(doc, criterion);
 
@@ -250,6 +258,7 @@ class CriterionEvaluatorTest {
     @Test
     void unknownOperator_withMultipleOperators_shouldReturnUndetermined() {
         Map<String, Object> doc = Map.of("age", 25);
+        // Using Map-based approach to test multiple unknown operators
         Criterion criterion = new Criterion("test", Map.of("age", Map.of("$fake", 18, "$invalid", 20)));
 
         EvaluationResult result = evaluator.evaluateCriterion(doc, criterion);
@@ -262,6 +271,7 @@ class CriterionEvaluatorTest {
     void unknownOperator_withValidAndInvalidOperators_shouldReturnUndetermined() {
         Map<String, Object> doc = Map.of("age", 25);
         // Has both valid ($eq) and invalid ($fake) operators
+        // Using Map-based approach since builder doesn't support mixing unknown operators easily
         Criterion criterion = new Criterion("test", Map.of("age", Map.of("$eq", 25, "$fake", 18)));
 
         EvaluationResult result = evaluator.evaluateCriterion(doc, criterion);
@@ -275,7 +285,10 @@ class CriterionEvaluatorTest {
     @Test
     void missingData_atTopLevel_shouldBeUndetermined() {
         Map<String, Object> doc = Map.of("name", "John");
-        Criterion criterion = new Criterion("test", Map.of("age", Map.of("$eq", 25)));
+        Criterion criterion = Criterion.builder()
+                .id("test")
+                .field("age").eq(25)
+                .build();
 
         EvaluationResult result = evaluator.evaluateCriterion(doc, criterion);
 
