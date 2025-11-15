@@ -1,6 +1,7 @@
-package uk.codery.rules;
+package uk.codery.jspec.result;
 
 import org.junit.jupiter.api.Test;
+import uk.codery.jspec.model.Criterion;
 
 import java.util.List;
 import java.util.Map;
@@ -23,10 +24,10 @@ class EvaluationSummaryTest {
 
         EvaluationSummary summary = EvaluationSummary.from(results);
 
-        assertThat(summary.totalRules()).isEqualTo(3);
-        assertThat(summary.matchedRules()).isEqualTo(3);
-        assertThat(summary.notMatchedRules()).isEqualTo(0);
-        assertThat(summary.undeterminedRules()).isEqualTo(0);
+        assertThat(summary.total()).isEqualTo(3);
+        assertThat(summary.matched()).isEqualTo(3);
+        assertThat(summary.notMatched()).isEqualTo(0);
+        assertThat(summary.undetermined()).isEqualTo(0);
         assertThat(summary.fullyDetermined()).isTrue();
     }
 
@@ -39,10 +40,10 @@ class EvaluationSummaryTest {
 
         EvaluationSummary summary = EvaluationSummary.from(results);
 
-        assertThat(summary.totalRules()).isEqualTo(2);
-        assertThat(summary.matchedRules()).isEqualTo(0);
-        assertThat(summary.notMatchedRules()).isEqualTo(2);
-        assertThat(summary.undeterminedRules()).isEqualTo(0);
+        assertThat(summary.total()).isEqualTo(2);
+        assertThat(summary.matched()).isEqualTo(0);
+        assertThat(summary.notMatched()).isEqualTo(2);
+        assertThat(summary.undetermined()).isEqualTo(0);
         assertThat(summary.fullyDetermined()).isTrue();
     }
 
@@ -57,10 +58,10 @@ class EvaluationSummaryTest {
 
         EvaluationSummary summary = EvaluationSummary.from(results);
 
-        assertThat(summary.totalRules()).isEqualTo(4);
-        assertThat(summary.matchedRules()).isEqualTo(2);
-        assertThat(summary.notMatchedRules()).isEqualTo(1);
-        assertThat(summary.undeterminedRules()).isEqualTo(1);
+        assertThat(summary.total()).isEqualTo(4);
+        assertThat(summary.matched()).isEqualTo(2);
+        assertThat(summary.notMatched()).isEqualTo(1);
+        assertThat(summary.undetermined()).isEqualTo(1);
         assertThat(summary.fullyDetermined()).isFalse();
     }
 
@@ -73,10 +74,10 @@ class EvaluationSummaryTest {
 
         EvaluationSummary summary = EvaluationSummary.from(results);
 
-        assertThat(summary.totalRules()).isEqualTo(2);
-        assertThat(summary.matchedRules()).isEqualTo(0);
-        assertThat(summary.notMatchedRules()).isEqualTo(0);
-        assertThat(summary.undeterminedRules()).isEqualTo(2);
+        assertThat(summary.total()).isEqualTo(2);
+        assertThat(summary.matched()).isEqualTo(0);
+        assertThat(summary.notMatched()).isEqualTo(0);
+        assertThat(summary.undetermined()).isEqualTo(2);
         assertThat(summary.fullyDetermined()).isFalse();
     }
 
@@ -86,10 +87,10 @@ class EvaluationSummaryTest {
 
         EvaluationSummary summary = EvaluationSummary.from(results);
 
-        assertThat(summary.totalRules()).isEqualTo(0);
-        assertThat(summary.matchedRules()).isEqualTo(0);
-        assertThat(summary.notMatchedRules()).isEqualTo(0);
-        assertThat(summary.undeterminedRules()).isEqualTo(0);
+        assertThat(summary.total()).isEqualTo(0);
+        assertThat(summary.matched()).isEqualTo(0);
+        assertThat(summary.notMatched()).isEqualTo(0);
+        assertThat(summary.undetermined()).isEqualTo(0);
         assertThat(summary.fullyDetermined()).isTrue();
     }
 
@@ -105,10 +106,10 @@ class EvaluationSummaryTest {
     void summary_validation_passesWhenSumMatchesTotal() {
         EvaluationSummary summary = new EvaluationSummary(10, 4, 3, 3, false);
 
-        assertThat(summary.totalRules()).isEqualTo(10);
-        assertThat(summary.matchedRules()).isEqualTo(4);
-        assertThat(summary.notMatchedRules()).isEqualTo(3);
-        assertThat(summary.undeterminedRules()).isEqualTo(3);
+        assertThat(summary.total()).isEqualTo(10);
+        assertThat(summary.matched()).isEqualTo(4);
+        assertThat(summary.notMatched()).isEqualTo(3);
+        assertThat(summary.undetermined()).isEqualTo(3);
     }
 
     @Test
@@ -121,7 +122,7 @@ class EvaluationSummaryTest {
     }
 
     private EvaluationResult createResult(EvaluationState state) {
-        Rule dummyRule = new Rule("test-" + state, Map.of());
-        return new EvaluationResult(dummyRule, state, List.of(), null);
+        Criterion dummyCriterion = new Criterion("test-" + state, Map.of());
+        return new EvaluationResult(dummyCriterion, state, List.of(), null);
     }
 }

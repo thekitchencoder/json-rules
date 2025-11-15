@@ -1,26 +1,26 @@
-package uk.codery.rules;
+package uk.codery.jspec.result;
+
+import uk.codery.jspec.model.Criterion;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static java.util.function.Predicate.not;
-
 /**
- * Result of evaluating a single rule against a document.
+ * Result of evaluating a single criterion against a document.
  *
  * <p>Uses a tri-state model to distinguish between:
  * <ul>
- *   <li>MATCHED - Rule evaluated successfully and condition is true</li>
- *   <li>NOT_MATCHED - Rule evaluated successfully and condition is false</li>
- *   <li>UNDETERMINED - Rule could not be evaluated due to errors or missing data</li>
+ *   <li>MATCHED - Criterion evaluated successfully and condition is true</li>
+ *   <li>NOT_MATCHED - Criterion evaluated successfully and condition is false</li>
+ *   <li>UNDETERMINED - Criterion could not be evaluated due to errors or missing data</li>
  * </ul>
  *
  * <p>The {@code failureReason} provides details when state is UNDETERMINED,
- * helping developers debug issues with rules or data.
+ * helping developers debug issues with criteria or data.
  */
 public record EvaluationResult(
-        Rule rule,
+        Criterion criterion,
         EvaluationState state,
         List<String> missingPaths,
         String failureReason) implements Result {
@@ -32,21 +32,21 @@ public record EvaluationResult(
     }
 
     /**
-     * Creates an UNDETERMINED result for a missing rule definition.
+     * Creates an UNDETERMINED result for a missing criterion definition.
      */
-    public static EvaluationResult missing(Rule rule){
-        return missing(rule.id());
+    public static EvaluationResult missing(Criterion criterion){
+        return missing(criterion.id());
     }
 
     /**
-     * Creates an UNDETERMINED result for a missing rule definition.
+     * Creates an UNDETERMINED result for a missing criterion definition.
      */
     public static EvaluationResult missing(String id){
         return new EvaluationResult(
-                new Rule(id),
+                new Criterion(id),
                 EvaluationState.UNDETERMINED,
-                Collections.singletonList("rule definition"),
-                "Rule definition not found"
+                Collections.singletonList("criterion definition"),
+                "Criterion definition not found"
         );
     }
 
@@ -71,7 +71,7 @@ public record EvaluationResult(
 
     @Override
     public String id(){
-        return rule.id();
+        return criterion.id();
     }
 
     @Override
@@ -81,7 +81,7 @@ public record EvaluationResult(
             case UNDETERMINED -> failureReason != null ? failureReason :
                     (missingPaths.isEmpty() ? "Evaluation failed" : "Missing data at: " + String.join(", ", missingPaths));
             case NOT_MATCHED -> missingPaths.isEmpty() ?
-                    String.format("Non-matching values at %s", rule.query()) :
+                    String.format("Non-matching values at %s", criterion.query()) :
                     "Missing data at: " + String.join(", ", missingPaths);
         };
     }
@@ -89,16 +89,17 @@ public record EvaluationResult(
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Rule ").append(rule).append("\n");
-        sb.append("  State: ").append(state).append("\n");
-        sb.append("  Matched: ").append(matched()).append("\n");
+        sb.append(criterion.id()).append(":\n");
+        sb.append("  match: ").append(matched()).append("\n");
+        sb.append("  query: ").append(criterion.query()).append("\n");
+        sb.append("  state: ").append(state).append("\n");
 
         if(!missingPaths.isEmpty()) {
-            sb.append("  Missing paths: ").append(String.join(", ", missingPaths)).append("\n");
+            sb.append("  missing: [").append(String.join(", ", missingPaths)).append("]\n");
         }
 
         Optional.ofNullable(reason()).ifPresent(reason ->
-            sb.append("  Reason: ").append(reason).append("\n")
+            sb.append("  reason: \"").append(reason).append("\"\n")
         );
         return sb.toString();
     }

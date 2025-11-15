@@ -1,10 +1,10 @@
 # CLAUDE.md - AI Assistant Context
 
-This document provides context for AI assistants (like Claude) working with the JSON Rules Engine codebase.
+This document provides context for AI assistants (like Claude) working with the JSON Specification Evaluator codebase.
 
 ## Project Overview
 
-**JSON Rules Engine** is a lightweight Java 21 library for evaluating business rules against JSON/YAML documents using MongoDB-style operators. The codebase is intentionally minimal (~757 lines) with a focus on clean architecture and zero framework dependencies.
+**JSON Specification Evaluator** is a lightweight Java 21 library for evaluating business criteria against JSON/YAML documents using MongoDB-style operators. The codebase is intentionally minimal (~757 lines) with a focus on clean architecture and zero framework dependencies.
 
 ### Key Characteristics
 
@@ -17,29 +17,33 @@ This document provides context for AI assistants (like Claude) working with the 
 ## Codebase Structure
 
 ```
-json-rules/
-├── pom.xml                                 # Maven configuration
-├── src/main/java/uk/codery/rules/         # Core library (12 classes, 757 lines)
-│   ├── RuleEvaluator.java                 # [418 lines] Query matching engine
-│   ├── SpecificationEvaluator.java        # [49 lines] Orchestrates evaluation
-│   ├── EvaluationState.java               # [40 lines] MATCHED/NOT_MATCHED/UNDETERMINED
-│   ├── EvaluationResult.java              # [106 lines] Individual rule result
-│   ├── EvaluationOutcome.java             # [16 lines] Overall specification result
-│   ├── EvaluationSummary.java             # [60 lines] Evaluation statistics
-│   ├── Rule.java                          # [10 lines] Rule definition record
-│   ├── RuleSet.java                       # [9 lines] Grouped rules with AND/OR
-│   ├── Specification.java                 # [6 lines] Collection of rules
-│   ├── Operator.java                      # [6 lines] AND/OR enum
-│   ├── RuleSetResult.java                 # [30 lines] RuleSet evaluation result
-│   └── Result.java                        # [7 lines] Interface for results
-├── src/test/java/uk/codery/rules/         # Tests and demo
-│   ├── TriStateEvaluationTest.java        # Comprehensive test suite
-│   ├── EvaluationSummaryTest.java         # Summary calculation tests
-│   └── demo/Main.java                     # Demo CLI application
-└── src/test/resources/                    # Test data
-    ├── specification.{json,yaml}          # Sample specifications
-    ├── document.yaml                      # Sample document
-    └── seed/citizens.json                 # Employment/benefits data
+jspec/
+├── pom.xml                                          # Maven configuration
+├── src/main/java/uk/codery/jspec/                  # Core library (12 classes, 757 lines)
+│   ├── model/                                      # Domain models (what users create)
+│   │   ├── Criterion.java                          # [10 lines] Criterion definition record
+│   │   ├── CriteriaGroup.java                      # [9 lines] Grouped criteria with AND/OR
+│   │   ├── Specification.java                      # [6 lines] Collection of criteria
+│   │   └── Junction.java                           # [6 lines] AND/OR enum
+│   ├── evaluator/                                  # Evaluation engine (what users call)
+│   │   ├── CriterionEvaluator.java                 # [418 lines] Query matching engine
+│   │   └── SpecificationEvaluator.java             # [49 lines] Orchestrates evaluation
+│   ├── result/                                     # Result types (what users receive)
+│   │   ├── EvaluationState.java                    # [40 lines] MATCHED/NOT_MATCHED/UNDETERMINED
+│   │   ├── EvaluationResult.java                   # [106 lines] Individual criterion result
+│   │   ├── EvaluationOutcome.java                  # [16 lines] Overall specification result
+│   │   ├── EvaluationSummary.java                  # [60 lines] Evaluation statistics
+│   │   ├── CriteriaGroupResult.java                # [30 lines] CriteriaGroup evaluation result
+│   │   └── Result.java                             # [7 lines] Interface for results
+│   └── operator/                                   # Future: custom operator support
+├── src/test/java/uk/codery/jspec/                  # Tests and demo
+│   ├── TriStateEvaluationTest.java                 # Comprehensive test suite
+│   ├── EvaluationSummaryTest.java                  # Summary calculation tests
+│   └── demo/Main.java                              # Demo CLI application
+└── src/test/resources/                             # Test data
+    ├── specification.{json,yaml}                   # Sample specifications
+    ├── document.yaml                               # Sample document
+    └── seed/citizens.json                          # Employment/benefits data
 
 Documentation:
 ├── README.md                              # User-facing documentation
@@ -56,17 +60,17 @@ Documentation:
 
 ### 1. Tri-State Evaluation Model
 
-Every rule evaluation produces one of three states:
+Every criterion evaluation produces one of three states:
 
-- **MATCHED** - Rule evaluated successfully, condition is TRUE
-- **NOT_MATCHED** - Rule evaluated successfully, condition is FALSE
-- **UNDETERMINED** - Could not evaluate (missing data, invalid rule, type mismatch)
+- **MATCHED** - Criterion evaluated successfully, condition is TRUE
+- **NOT_MATCHED** - Criterion evaluated successfully, condition is FALSE
+- **UNDETERMINED** - Could not evaluate (missing data, invalid criterion, type mismatch)
 
 This is the core innovation that enables graceful degradation.
 
 ### 2. Graceful Degradation
 
-**Design Contract**: Rules never fail hard. One bad rule never stops specification evaluation.
+**Design Contract**: Criteria never fail hard. One bad criterion never stops specification evaluation.
 
 Implementation:
 - Unknown operators → UNDETERMINED + log warning
@@ -77,28 +81,154 @@ Implementation:
 
 ### 3. Operator System
 
-13 MongoDB-style operators implemented in `RuleEvaluator`:
+13 MongoDB-style operators implemented in `CriterionEvaluator`:
 
 **Comparison**: `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte`
 **Collection**: `$in`, `$nin`, `$all`, `$size`
 **Advanced**: `$exists`, `$type`, `$regex`, `$elemMatch`
 
-Operators are implemented as lambda-based handlers in a map (RuleEvaluator.java:50-100).
+Operators are implemented as lambda-based handlers in a map (CriterionEvaluator.java:50-100).
 
 ### 4. Deep Document Navigation
 
 Uses dot notation to traverse nested maps:
 - `benefits.universal_credit.status` → `document.get("benefits").get("universal_credit").get("status")`
-- Implemented in `RuleEvaluator.navigate()` method
+- Implemented in `CriterionEvaluator.navigate()` method
+
+## Terminology & Naming Decisions
+
+### Project Evolution: "Rules" → "Criteria" (November 2025)
+
+**Historical Context:**
+
+The project was originally conceived as "JSON Rules" with "rules" terminology throughout the codebase. In November 2025, a comprehensive refactoring was undertaken to pivot to "Specification" and "Criterion" semantics for the following reasons:
+
+**Why We Changed:**
+
+1. **Domain Alignment** - "Specification" better reflects the library's purpose of defining evaluation specifications against documents
+2. **Industry Standards** - "Criterion/Criteria" is more commonly used in business rule engines and validation frameworks
+3. **Semantic Clarity** - "Rules" implies imperative logic (do X when Y), whereas "Criteria" better represents declarative conditions (check if X matches Y)
+4. **Professional Terminology** - "Specification" and "Criterion" are more formal and align with enterprise software terminology
+
+**What Changed:**
+- `Rule` → `Criterion`
+- `RulesSet` → `CriteriaGroup`
+- `RulesEngine` → `SpecificationEvaluator`
+- Project name: "JSON Rules" → "JSON Specification Evaluator"
+- Artifact ID: `json-rules` → `jspec`
+
+**Migration Notes:**
+- Full refactoring completed in commit range: `98ccdaf..bd3accf`
+- All 26 occurrences across source, tests, and documentation updated
+- See `docs/rules-to-jspec.md` for complete migration audit
+
+### Critical Terminology Distinction: "Junction" vs "Operator"
+
+**⚠️ IMPORTANT:** The codebase uses two distinct concepts that must never be conflated:
+
+#### 1. **Operators** - MongoDB-Style Query Operators
+
+**What they are:**
+- The 13 MongoDB-style query operators used in criterion evaluation
+- Examples: `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$nin`, `$all`, `$size`, `$exists`, `$type`, `$regex`, `$elemMatch`
+
+**Where they appear:**
+- `OperatorHandler` interface (CriterionEvaluator.java:30)
+- `operators` field (CriterionEvaluator.java:14) - Map of operator name → handler
+- `registerOperators()` method (CriterionEvaluator.java:92)
+- All `evaluate*Operator()` methods (e.g., `evaluateInOperator()`, `evaluateRegexOperator()`)
+
+**Used in context:**
+```java
+// Operator usage - checking if value matches condition
+Map<String, Object> query = Map.of("age", Map.of("$gte", 18));  // $gte is an OPERATOR
+```
+
+#### 2. **Junctions** - Boolean Logic Combinators (AND/OR)
+
+**What they are:**
+- Boolean logic operators for combining multiple criteria
+- Only two values: `AND`, `OR`
+- Represented by the `Junction` enum
+
+**Where they appear:**
+- `Junction` enum (model/Junction.java) - Defines AND/OR
+- `CriteriaGroup.junction` field - Specifies how to combine criteria in a group
+- `CriteriaGroupResult.junction` field - Records which junction was used
+
+**Used in context:**
+```java
+// Junction usage - combining criteria with boolean logic
+CriteriaGroup group = new CriteriaGroup(
+    "adult-and-active",
+    Junction.AND,  // <-- Junction: ALL criteria must match
+    List.of("age-check", "status-check")
+);
+```
+
+#### Common Mistakes to Avoid
+
+❌ **WRONG:** "MongoDB-style query junctions"
+✅ **CORRECT:** "MongoDB-style query operators"
+
+❌ **WRONG:** "13 junctions in CriterionEvaluator"
+✅ **CORRECT:** "13 operators in CriterionEvaluator"
+
+❌ **WRONG:** "JunctionHandler interface for $eq, $ne, etc."
+✅ **CORRECT:** "OperatorHandler interface for $eq, $ne, etc."
+
+❌ **WRONG:** "Unknown junction: $foo"
+✅ **CORRECT:** "Unknown operator: $foo"
+
+#### Why This Distinction Matters
+
+**Semantic Clarity:**
+- "Operator" = Evaluates a single condition ($eq, $gt, $regex, etc.)
+- "Junction" = Combines multiple criteria (AND, OR)
+
+**Code Organization:**
+- Operators live in `CriterionEvaluator` (query evaluation layer)
+- Junctions live in `CriteriaGroup` (domain model layer)
+
+**Future Extensibility:**
+- Custom operators will extend `OperatorHandler`
+- Junctions are fixed (AND/OR only, no plans for XOR/NAND/etc.)
+
+**Example Showing Both:**
+```java
+// Criterion with OPERATOR
+Criterion ageCheck = new Criterion("age-check",
+    Map.of("age", Map.of("$gte", 18)));  // $gte is an OPERATOR
+
+Criterion statusCheck = new Criterion("status-check",
+    Map.of("status", Map.of("$eq", "ACTIVE")));  // $eq is an OPERATOR
+
+// CriteriaGroup with JUNCTION
+CriteriaGroup group = new CriteriaGroup(
+    "eligibility",
+    Junction.AND,  // <-- JUNCTION: combines criteria with AND logic
+    List.of("age-check", "status-check")
+);
+```
+
+**Memory Aid:**
+- **Operator** = What you're checking ($eq, $gt, $in, etc.) - **13 different operators**
+- **Junction** = How you're combining (AND, OR) - **2 junctions only**
+
+### Verification
+
+For a complete audit of the terminology refactoring, see:
+- `docs/rules-to-jspec.md` - Full migration report with verification results
+- Git commits `98ccdaf..bd3accf` - Refactoring implementation
 
 ## Key Files Deep Dive
 
-### RuleEvaluator.java (418 lines)
+### CriterionEvaluator.java (418 lines)
 
 **Purpose**: Core query evaluation engine
 
 **Key Methods**:
-- `evaluateRule(document, rule)` - Main entry point for single rule
+- `evaluateCriterion(document, criterion)` - Main entry point for single criterion
 - `evaluate(document, query)` - Recursive query evaluation
 - `navigate(document, path)` - Deep document navigation with dot notation
 - Operator handlers (lines 50-100) - Lambda-based operator implementations
@@ -118,26 +248,26 @@ Uses dot notation to traverse nested maps:
 **Purpose**: Orchestrates parallel evaluation of specifications
 
 **Key Methods**:
-- `evaluate(document, specification)` - Evaluates all rules and rulesets
+- `evaluate(document, specification)` - Evaluates all criteria and criteriaGroups
 - Uses parallel streams for concurrent evaluation
-- Caches rule results for efficient ruleset evaluation
+- Caches criterion results for efficient criteriaGroup evaluation
 
 **Architecture**:
-- Line 15: Creates internal RuleEvaluator instance
-- Lines 16-22: Parallel evaluation of all rules
-- Lines 24-35: Sequential evaluation of rulesets (uses cached results)
+- Line 15: Creates internal CriterionEvaluator instance
+- Lines 16-22: Parallel evaluation of all criteria
+- Lines 24-35: Sequential evaluation of criteriaGroups (uses cached results)
 - Lines 37-46: Build EvaluationOutcome with summary
 
 **Thread Safety**: Fully thread-safe (uses parallel streams, no mutable state)
 
 ### EvaluationResult.java (106 lines)
 
-**Purpose**: Represents individual rule evaluation outcome
+**Purpose**: Represents individual criterion evaluation outcome
 
 **Key Fields**:
 ```java
 record EvaluationResult(
-    Rule rule,
+    Criterion criterion,
     EvaluationState state,      // MATCHED/NOT_MATCHED/UNDETERMINED
     List<String> missingPaths,  // Tracks missing document fields
     String failureReason        // Explains UNDETERMINED state
@@ -145,10 +275,10 @@ record EvaluationResult(
 ```
 
 **Factory Methods**:
-- `matched(rule)` - Successful match
-- `notMatched(rule)` - Evaluated but didn't match
-- `undetermined(rule, reason, paths)` - Couldn't evaluate
-- `missing(rule)` - Rule not found in specification
+- `matched(criterion)` - Successful match
+- `notMatched(criterion)` - Evaluated but didn't match
+- `undetermined(criterion, reason, paths)` - Couldn't evaluate
+- `missing(criterion)` - Criterion not found in specification
 
 **Important Methods**:
 - `matched()` - Returns true only if state == MATCHED
@@ -160,9 +290,9 @@ record EvaluationResult(
 All domain models use Java records (immutable by default):
 
 ```java
-record Rule(String id, Map<String, Object> query)
-record RuleSet(String id, Operator operator, List<String> rules)
-record Specification(String id, List<Rule> rules, List<RuleSet> ruleSets)
+record Criterion(String id, Map<String, Object> query)
+record CriteriaGroup(String id, Junction junction, List<String> criteria)
+record Specification(String id, List<Criterion> criteria, List<CriteriaGroup> criteriaGroups)
 ```
 
 **Design Choice**: Records provide immutability, structural equality, and clean toString() for free.
@@ -183,10 +313,10 @@ record Specification(String id, List<Rule> rules, List<RuleSet> ruleSets)
 
 ### Adding New Operators
 
-To add a new operator to `RuleEvaluator`:
+To add a new operator to `CriterionEvaluator`:
 
 ```java
-// In RuleEvaluator constructor (around line 50)
+// In CriterionEvaluator constructor (around line 50)
 operators.put("$myOperator", (val, operand) -> {
     // Type checking (prevent ClassCastException)
     if (!(operand instanceof ExpectedType)) {
@@ -210,8 +340,8 @@ See `TriStateEvaluationTest.java` for examples:
 ```java
 @Test
 void testOperator_shouldMatch() {
-    Rule rule = new Rule("test", Map.of("field", Map.of("$operator", value)));
-    EvaluationResult result = evaluator.evaluateRule(document, rule);
+    Criterion criterion = new Criterion("test", Map.of("field", Map.of("$operator", value)));
+    EvaluationResult result = evaluator.evaluateCriterion(document, criterion);
 
     assertEquals(EvaluationState.MATCHED, result.state());
 }
@@ -228,9 +358,9 @@ void testOperator_shouldBeUndetermined() {
 
 - **WARN**: Unknown operators, type mismatches, invalid patterns
 - **INFO**: Specification evaluation started/completed
-- **DEBUG**: Individual rule evaluations
+- **DEBUG**: Individual criterion evaluations
 - **TRACE**: Detailed matching logic
-- **ERROR**: Never used (rules don't error, they become UNDETERMINED)
+- **ERROR**: Never used (criteria don't error, they become UNDETERMINED)
 
 ## Common Tasks
 
@@ -244,7 +374,7 @@ mvn test -Dtest=TriStateEvaluationTest     # Run specific test
 ### Running Demo
 
 ```bash
-mvn test-compile exec:java -Dexec.mainClass="uk.codery.rules.demo.Main"
+mvn test-compile exec:java -Dexec.mainClass="uk.codery.jspec.demo.Main"
 ```
 
 ### Building
@@ -272,18 +402,18 @@ Currently operators are hardcoded. Planned improvement:
 // Future API
 OperatorRegistry registry = new OperatorRegistry();
 registry.register("$custom", customHandler);
-RuleEvaluator evaluator = new RuleEvaluator(registry);
+CriterionEvaluator evaluator = new CriterionEvaluator(registry);
 ```
 
 See IMPROVEMENT_ROADMAP.md § 2.1 for details.
 
 ### 2. Builder API (Future)
 
-Planned fluent API for easier rule construction:
+Planned fluent API for easier criterion construction:
 
 ```java
 // Future API
-Rule rule = Rule.builder()
+Criterion criterion = Criterion.builder()
     .id("age-check")
     .field("age").gte(18)
     .build();
@@ -305,12 +435,12 @@ Potential configuration points:
 
 - **Operator evaluation**: O(1) map lookup
 - **Document navigation**: O(d) where d = dot-notation depth
-- **Parallel evaluation**: Rules evaluated concurrently using parallel streams
+- **Parallel evaluation**: Criteria evaluated concurrently using parallel streams
 - **Regex**: Pattern compiled on every evaluation (no caching)
 
 ### Known Bottlenecks
 
-1. **Regex Pattern Compilation** (RuleEvaluator.java:60)
+1. **Regex Pattern Compilation** (CriterionEvaluator.java:60)
    - Currently: `Pattern.compile()` called on every `$regex` evaluation
    - Impact: 10-100x slower for repeated patterns
    - Solution: Add LRU pattern cache (see IMPROVEMENT_ROADMAP.md § 3.1)
@@ -346,7 +476,7 @@ f06b836 - refactor: remove backward compatibility, simplify implementation
 **Added**:
 - `EvaluationState` enum
 - `failureReason` field in `EvaluationResult`
-- `EvaluationSummary` with `undeterminedRules` count
+- `EvaluationSummary` with `undeterminedCriteria` count
 - Comprehensive error tracking
 
 **Changed**:
@@ -368,7 +498,7 @@ See IMPROVEMENT_ROADMAP.md for planned solutions.
 
 ### Common Issues
 
-**Q: Rule always returns UNDETERMINED**
+**Q: Criterion always returns UNDETERMINED**
 A: Check `result.failureReason()` and `result.missingPaths()` for details.
 
 **Q: Unknown operator warnings in logs**
@@ -382,8 +512,8 @@ A: Ensure documents are thread-safe (use immutable collections).
 
 ### Debugging Tips
 
-1. **Enable DEBUG logging**: Set SLF4J level to DEBUG to see individual rule evaluations
-2. **Check evaluation summary**: `outcome.summary()` shows counts of UNDETERMINED rules
+1. **Enable DEBUG logging**: Set SLF4J level to DEBUG to see individual criterion evaluations
+2. **Check evaluation summary**: `outcome.summary()` shows counts of UNDETERMINED criteria
 3. **Inspect failure reasons**: `result.failureReason()` explains why evaluation failed
 4. **Review missing paths**: `result.missingPaths()` lists absent document fields
 
@@ -446,7 +576,7 @@ While Spring-independent, the library works well with Spring:
 
 ```java
 @Configuration
-public class RulesConfig {
+public class CriteriaConfig {
 
     @Bean
     public SpecificationEvaluator specificationEvaluator() {
@@ -468,7 +598,7 @@ public class EligibilityService {
     public boolean checkEligibility(Map<String, Object> citizen,
                                    Specification spec) {
         EvaluationOutcome outcome = evaluator.evaluate(citizen, spec);
-        return outcome.summary().matchedRules() > 0;
+        return outcome.summary().matchedCriteria() > 0;
     }
 }
 ```
@@ -492,6 +622,10 @@ When working with this codebase, consider:
 4. **Are there tests for this change?**
 5. **Is logging using SLF4J, not System.out/err?**
 6. **Does this follow the tri-state evaluation model?**
+7. **Are you using "operator" and "junction" terminology correctly?**
+   - ❌ Don't say "junction" when referring to query operators ($eq, $ne, etc.)
+   - ✅ Use "operator" for query operators ($eq, $ne, $gt, etc.)
+   - ✅ Use "junction" only for AND/OR boolean logic
 
 ## Additional Context
 
@@ -512,8 +646,8 @@ When working with this codebase, consider:
 ### Why Graceful Degradation?
 
 - Real-world data is messy and incomplete
-- Business rules evaluation shouldn't halt on missing fields
-- Users need to know which rules couldn't evaluate
+- Business criteria evaluation shouldn't halt on missing fields
+- Users need to know which criteria couldn't evaluate
 - Partial results are better than no results
 
 ### Why Spring-Independent?
@@ -533,6 +667,6 @@ For questions about this codebase:
 
 ---
 
-**Last Updated**: 2025-11-14
-**Version**: 0.0.1-SNAPSHOT
+**Last Updated**: 2025-11-15 (Added terminology section documenting Rules→Criteria pivot and Junction vs Operator distinction)
+**Version**: 0.1.0-SNAPSHOT
 **Java Version**: 21

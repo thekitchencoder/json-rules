@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the JSON Rules Engine will be documented in this file.
+All notable changes to the JSON Specification Evaluator will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -25,8 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Collection: `$in`, `$nin`, `$all`, `$size`
   - Advanced: `$exists`, `$type`, `$regex`, `$elemMatch`
 - Deep document navigation with dot notation
-- Parallel rule evaluation using streams
-- RuleSet support with AND/OR operators
+- Parallel criterion evaluation using streams
+- CriteriaGroup support with AND/OR junctions
 - Thread-safe evaluation
 - YAML/JSON specification loading via Jackson
 - Comprehensive test suite (TriStateEvaluationTest, EvaluationSummaryTest)
@@ -51,7 +51,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.0.0] - Initial POC
 
 ### Added
-- Basic rule evaluation engine
+- Basic criterion evaluation engine
 - MongoDB-style operator support
 - Document navigation
 - Simple matched/not-matched binary evaluation
@@ -95,7 +95,7 @@ See [IMPROVEMENT_ROADMAP.md](IMPROVEMENT_ROADMAP.md) for planned enhancements:
 - JavaDoc for all public classes
 
 ### Planned for v0.2.0
-- Builder API for fluent rule construction
+- Builder API for fluent criterion construction
 - Configuration options (strict mode, cache size)
 - Performance benchmarks
 - Spring Boot integration examples
@@ -120,8 +120,8 @@ boolean matched = result.matched(); // Ambiguous: false could mean not-matched O
 **After (0.0.1-SNAPSHOT)**:
 ```java
 switch (result.state()) {
-    case MATCHED -> System.out.println("Rule passed");
-    case NOT_MATCHED -> System.out.println("Rule failed");
+    case MATCHED -> System.out.println("Criterion passed");
+    case NOT_MATCHED -> System.out.println("Criterion failed");
     case UNDETERMINED -> System.out.println("Could not evaluate: " + result.reason());
 }
 
@@ -133,9 +133,9 @@ boolean matched = result.matched(); // Returns true only if MATCHED
 ```java
 // Check if evaluation was complete
 if (result.isDetermined()) {
-    // Rule evaluated successfully (MATCHED or NOT_MATCHED)
+    // Criterion evaluated successfully (MATCHED or NOT_MATCHED)
 } else {
-    // Rule could not be evaluated (UNDETERMINED)
+    // Criterion could not be evaluated (UNDETERMINED)
     System.out.println("Failure reason: " + result.failureReason());
     System.out.println("Missing paths: " + result.missingPaths());
 }
@@ -143,7 +143,7 @@ if (result.isDetermined()) {
 // Check overall evaluation completeness
 EvaluationSummary summary = outcome.summary();
 if (!summary.fullyDetermined()) {
-    System.out.println("Warning: " + summary.undeterminedRules() + " rules could not be evaluated");
+    System.out.println("Warning: " + summary.undetermined() + " criteria could not be evaluated");
 }
 ```
 
@@ -151,8 +151,8 @@ if (!summary.fullyDetermined()) {
 
 ## Links
 
-- [Repository](https://github.com/thekitchencoder/json-rules)
-- [Issue Tracker](https://github.com/thekitchencoder/json-rules/issues)
+- [Repository](https://github.com/thekitchencoder/jspec)
+- [Issue Tracker](https://github.com/thekitchencoder/jspec/issues)
 - [Contributing Guide](CONTRIBUTING.md)
 - [License](LICENSE)
 

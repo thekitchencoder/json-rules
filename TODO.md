@@ -1,4 +1,4 @@
-# JSON Rules Engine - TODO List
+# JSON Specification Evaluator - TODO List
 
 ## 🎯 Quick Summary
 
@@ -21,20 +21,20 @@
 ## 📋 Priority 1: Foundation (CRITICAL)
 
 ### Testing (Week 1)
-- [ ] Unit tests for all 13 operators in RuleEvaluator
+- [ ] Unit tests for all 13 operators in CriterionEvaluator
 - [ ] Unit tests for SpecificationEvaluator (parallel evaluation, result caching)
 - [ ] Integration tests for end-to-end scenarios
 - [ ] Edge case testing (nulls, type mismatches, deep nesting)
 
 ### Error Handling - Graceful Degradation (Week 1)
-**Contract:** Rules never fail hard - return MATCHED/NOT_MATCHED/UNDETERMINED
+**Contract:** Criteria never fail hard - return MATCHED/NOT_MATCHED/UNDETERMINED
 - [ ] Add `EvaluationState` enum (MATCHED / NOT_MATCHED / UNDETERMINED)
 - [ ] Update `EvaluationResult` with state + failureReason
-- [ ] Handle unknown operators → UNDETERMINED + warn log (RuleEvaluator.java:194)
+- [ ] Handle unknown operators → UNDETERMINED + warn log (CriterionEvaluator.java:194)
 - [ ] Handle type mismatches → UNDETERMINED + warn log
 - [ ] Handle invalid regex patterns → UNDETERMINED + warn log
 - [ ] Add SLF4J logging (replace System.err.println)
-- [ ] Add evaluation summary tracking (determined vs undetermined rules)
+- [ ] Add evaluation summary tracking (determined vs undetermined criteria)
 - [ ] FUTURE: Add strict mode (throw exceptions for development)
 
 ---
@@ -44,13 +44,13 @@
 ### Public API for Custom Operators (Week 2)
 - [ ] Extract `OperatorHandler` interface to public API
 - [ ] Create `OperatorRegistry` class for dynamic operator registration
-- [ ] Make `RuleEvaluator` public (currently package-private)
+- [ ] Make `CriterionEvaluator` public (currently package-private)
 - [ ] Add constructor accepting custom OperatorRegistry
 
 ### Builder Pattern (Week 2)
-- [ ] Create `RuleEvaluatorBuilder` for configuration
+- [ ] Create `CriterionEvaluatorBuilder` for configuration
 - [ ] Create `SpecificationEvaluatorBuilder` for configuration
-- [ ] Add fluent API for building Rules programmatically
+- [ ] Add fluent API for building Criteria programmatically
 - [ ] Add QueryBuilder for complex query construction
 
 ### Bug Fixes
@@ -68,7 +68,7 @@
 
 ### Logging (Week 3)
 - [ ] Add SLF4J dependency (facade only, no implementation)
-- [ ] Add logging to RuleEvaluator (DEBUG: evaluations, WARN: unknown operators)
+- [ ] Add logging to CriterionEvaluator (DEBUG: evaluations, WARN: unknown operators)
 - [ ] Add logging to SpecificationEvaluator (INFO: results)
 - [ ] Document logging configuration for users
 
@@ -85,7 +85,7 @@
 ### User Documentation (Week 4)
 - [ ] Create README.md with quick start guide
 - [ ] Document all 13 operators with examples
-- [ ] Add "Building Rules Programmatically" section
+- [ ] Add "Building Criteria Programmatically" section
 - [ ] Show Spring integration examples
 - [ ] Create CHANGELOG.md
 
@@ -118,7 +118,7 @@
 
 ### Type Safety
 - [ ] Add generic document type support
-- [ ] Create TypedRuleEvaluator<T>
+- [ ] Create TypedCriterionEvaluator<T>
 - [ ] Improve type casting and validation
 
 ### Additional Operators
@@ -134,10 +134,10 @@
 ### Package Reorganization (Breaking Change)
 Consider reorganizing for v1.0:
 ```
-uk.codery.rules.api.*        → Public API (interfaces, builders)
-uk.codery.rules.core.*       → Core implementation
-uk.codery.rules.operators.*  → Operator implementations
-uk.codery.rules.exceptions.* → Exception hierarchy
+uk.codery.jspec.api.*        → Public API (interfaces, builders)
+uk.codery.jspec.core.*       → Core implementation
+uk.codery.jspec.model.*      → Operator implementations
+uk.codery.jspec.exceptions.* → Exception hierarchy
 ```
 
 ### Immutability Improvements
@@ -152,16 +152,16 @@ uk.codery.rules.exceptions.* → Exception hierarchy
 1. **SpecificationEvaluator.java:15** - Ignores constructor parameter
    ```java
    // BUG: Should use this.evaluator, not create new instance
-   RuleEvaluator evaluator = new RuleEvaluator();
+   CriterionEvaluator evaluator = new CriterionEvaluator();
    ```
 
-2. **RuleEvaluator.java:60** - Pattern recreation on every evaluation
+2. **CriterionEvaluator.java:60** - Pattern recreation on every evaluation
    ```java
    // PERFORMANCE: Cache compiled patterns
    Pattern pattern = Pattern.compile((String) operand);
    ```
 
-3. **RuleEvaluator.java:194** - Prints errors to stderr
+3. **CriterionEvaluator.java:194** - Prints errors to stderr
    ```java
    // ERROR HANDLING: Throw exception instead
    System.err.println("Unknown operator: " + op);
@@ -210,20 +210,20 @@ After completing Priorities 1-4, you'll have:
 ## 📝 Files to Create
 
 ```
-src/main/java/uk/codery/rules/
+src/main/java/uk/codery/jspec/
 ├── OperatorHandler.java
 ├── OperatorRegistry.java
 ├── builder/
-│   ├── RuleEvaluatorBuilder.java
+│   ├── CriterionEvaluatorBuilder.java
 │   ├── SpecificationEvaluatorBuilder.java
-│   └── RuleBuilder.java
+│   └── CriterionBuilder.java
 └── exceptions/
-    ├── RuleEvaluationException.java
+    ├── CriterionEvaluationException.java
     ├── InvalidOperatorException.java
     └── InvalidQueryException.java
 
-src/test/java/uk/codery/rules/
-├── RuleEvaluatorTest.java
+src/test/java/uk/codery/jspec/
+├── CriterionEvaluatorTest.java
 ├── SpecificationEvaluatorTest.java
 └── operators/
     ├── ComparisonOperatorsTest.java
@@ -246,7 +246,7 @@ docs/
 1. **Fix the evaluator bug** (SpecificationEvaluator.java:15) - 2 minutes
 2. **Add JUnit dependency** to pom.xml - 5 minutes
 3. **Write first operator test** (e.g., `$eq`) - 30 minutes
-4. **Create RuleEvaluationException** - 15 minutes
+4. **Create CriterionEvaluationException** - 15 minutes
 5. **Add basic README** with usage example - 1 hour
 
 These 5 quick wins give you tests, error handling foundation, and documentation!

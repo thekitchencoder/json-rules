@@ -1,30 +1,30 @@
-package uk.codery.rules;
+package uk.codery.jspec.result;
 
 /**
  * Summary statistics for a specification evaluation.
  *
- * <p>Tracks the count of rules in each evaluation state and provides
+ * <p>Tracks the count of criteria in each evaluation state and provides
  * a flag to quickly determine if the evaluation was complete and deterministic.
  *
- * <p>The {@code fullyDetermined} flag is {@code true} only when all rules
+ * <p>The {@code fullyDetermined} flag is {@code true} only when all criteria
  * evaluated successfully (no UNDETERMINED states), allowing callers to
  * assess the confidence level of the evaluation result.
  */
 public record EvaluationSummary(
-        int totalRules,
-        int matchedRules,
-        int notMatchedRules,
-        int undeterminedRules,
+        int total,
+        int matched,
+        int notMatched,
+        int undetermined,
         boolean fullyDetermined) {
 
     /**
-     * Validates that the sum of matched, not matched, and undetermined rules equals total rules.
+     * Validates that the sum of matched, not matched, and undetermined criteria equals total criteria.
      */
     public EvaluationSummary {
-        if (matchedRules + notMatchedRules + undeterminedRules != totalRules) {
+        if (matched + notMatched + undetermined != total) {
             throw new IllegalArgumentException(
                     "Sum of matched (%d), notMatched (%d), and undetermined (%d) must equal total (%d)"
-                            .formatted(matchedRules, notMatchedRules, undeterminedRules, totalRules));
+                            .formatted(matched, notMatched, undetermined, total));
         }
     }
 

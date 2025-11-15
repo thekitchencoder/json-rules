@@ -1,13 +1,16 @@
-package uk.codery.rules;
+package uk.codery.jspec.evaluator;
 
 import lombok.extern.slf4j.Slf4j;
+import uk.codery.jspec.model.Criterion;
+import uk.codery.jspec.result.EvaluationResult;
+import uk.codery.jspec.result.EvaluationState;
 
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 @Slf4j
-public class RuleEvaluator {
+public class CriterionEvaluator {
     private final Map<String, OperatorHandler> operators = new HashMap<>();
 
     /**
@@ -69,20 +72,20 @@ public class RuleEvaluator {
         }
     }
 
-    public EvaluationResult evaluateRule(Object doc, Rule rule) {
-        log.debug("Evaluating rule '{}' against document", rule.id());
+    public EvaluationResult evaluateCriterion(Object doc, Criterion criterion) {
+        log.debug("Evaluating criterion '{}' against document", criterion.id());
 
-        return Optional.of(rule)
-                .map(Rule::query)
+        return Optional.of(criterion)
+                .map(Criterion::query)
                 .map(query -> matchValue(doc, query, ""))
-                .map(result -> new EvaluationResult(rule, result.state, result.missingPaths, result.failureReason))
+                .map(result -> new EvaluationResult(criterion, result.state, result.missingPaths, result.failureReason))
                 .orElseGet(() -> {
-                    log.warn("Rule '{}' has no query defined", rule.id());
-                    return EvaluationResult.missing(rule);
+                    log.warn("Criterion '{}' has no query defined", criterion.id());
+                    return EvaluationResult.missing(criterion);
                 });
     }
 
-    public RuleEvaluator() {
+    public CriterionEvaluator() {
         registerOperators();
     }
 
@@ -419,7 +422,7 @@ public class RuleEvaluator {
 
             OperatorHandler handler = operators.get(op);
             if (handler == null) {
-                log.warn("Unknown operator '{}' - marking rule as UNDETERMINED", op);
+                log.warn("Unknown operator '{}' - marking criterion as UNDETERMINED", op);
                 return InnerResult.undetermined("Unknown operator: " + op);
             }
 

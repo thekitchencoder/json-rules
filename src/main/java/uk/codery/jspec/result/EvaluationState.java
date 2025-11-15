@@ -1,7 +1,7 @@
-package uk.codery.rules;
+package uk.codery.jspec.result;
 
 /**
- * Represents the three possible states of a rule evaluation.
+ * Represents the three possible states of a criterion evaluation.
  *
  * <p>This tri-state model allows the system to distinguish between:
  * <ul>
@@ -10,28 +10,28 @@ package uk.codery.rules;
  *   <li>Failed evaluation due to errors or missing data (UNDETERMINED)</li>
  * </ul>
  *
- * <p>The UNDETERMINED state ensures graceful degradation - errors in one rule
- * never prevent evaluation of other rules or stop the overall specification evaluation.
+ * <p>The UNDETERMINED state ensures graceful degradation - errors in one criterion
+ * never prevent evaluation of other criteria or stop the overall specification evaluation.
  */
 public enum EvaluationState {
     /**
-     * Rule evaluated successfully and the condition is TRUE.
+     * Criterion evaluated successfully and the condition is TRUE.
      * All required data was present and valid.
      */
     MATCHED,
 
     /**
-     * Rule evaluated successfully and the condition is FALSE.
+     * Criterion evaluated successfully and the condition is FALSE.
      * All required data was present and valid.
      */
     NOT_MATCHED,
 
     /**
-     * Rule could not be evaluated definitively.
+     * Criterion could not be evaluated definitively.
      * Reasons include:
      * <ul>
      *   <li>Missing data in the input document</li>
-     *   <li>Unknown operator in the rule</li>
+     *   <li>Unknown operator in the criterion</li>
      *   <li>Type mismatch (operator expects different type)</li>
      *   <li>Invalid query (e.g., malformed regex pattern)</li>
      * </ul>

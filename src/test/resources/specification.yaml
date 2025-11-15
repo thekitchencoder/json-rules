@@ -1,5 +1,5 @@
 id: YAML contracted_provision_demo
-rules:
+criteria:
   - id: uc-active
     query: {benefits: {universal_credit:{status: "ACTIVE"}}}
 
@@ -9,13 +9,16 @@ rules:
   - id: time-on-uc
     query: {benefits: {universal_credit: {duration_months: { $gte: 6}}}}
 
-ruleSets:
-  - id: restart-ruleset
-    operator: AND
-    rules:
+  - id: previous-provision
+    query: {provision: {$elemMatch: {$nin: [restart,whp]}}}
+
+criteriaGroups:
+  - id: restart-criteriaGroup
+    junction: AND
+    criteria:
       - id: uc-active
       - id: intensive-workgroup
       - id: time-on-uc
-      - id: bad-bernard-rule
+      - id: bad-bernard-criterion
       - id: bernard-element
         query: {bernard: {$exists: false}}
