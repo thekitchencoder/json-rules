@@ -9,7 +9,6 @@ import uk.codery.jspec.result.*;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -24,23 +23,38 @@ class ResultFormatterTest {
     @BeforeEach
     void setUp() {
         // Simple outcome with one matched query result
-        QueryCriterion criterion = new QueryCriterion("age-check", Map.of("age", Map.of("$gte", 18)));
+        QueryCriterion criterion = QueryCriterion.builder()
+                .id("age-check")
+                .field("age").gte(18)
+                .build();
         QueryResult result = QueryResult.matched(criterion);
         EvaluationSummary summary = EvaluationSummary.from(List.of(result));
         sampleOutcome = new EvaluationOutcome("test-spec", List.of(result), summary);
 
         // Complex outcome with multiple result types
-        QueryCriterion query1 = new QueryCriterion("age-check", Map.of("age", Map.of("$gte", 18)));
+        QueryCriterion query1 = QueryCriterion.builder()
+                .id("age-check")
+                .field("age").gte(18)
+                .build();
         QueryResult queryResult1 = QueryResult.matched(query1);
 
-        QueryCriterion query2 = new QueryCriterion("country-check", Map.of("country", Map.of("$eq", "US")));
+        QueryCriterion query2 = QueryCriterion.builder()
+                .id("country-check")
+                .field("country").eq("US")
+                .build();
         QueryResult queryResult2 = QueryResult.notMatched(query2, List.of("country"));
 
-        QueryCriterion query3 = new QueryCriterion("email-check", Map.of("email", Map.of("$exists", true)));
+        QueryCriterion query3 = QueryCriterion.builder()
+                .id("email-check")
+                .field("email").exists(true)
+                .build();
         QueryResult queryResult3 = QueryResult.undetermined(query3, "Missing data", List.of("email"));
 
-        CompositeCriterion composite = new CompositeCriterion("eligibility", Junction.AND,
-                List.of(query1, query2));
+        CompositeCriterion composite = CompositeCriterion.builder()
+                .id("eligibility")
+                .and()
+                .criteria(query1, query2)
+                .build();
         CompositeResult compositeResult = new CompositeResult(composite, EvaluationState.NOT_MATCHED,
                 List.of(queryResult1, queryResult2));
 
@@ -263,7 +277,10 @@ class ResultFormatterTest {
 
     @Test
     void textFormatter_showsReasons() {
-        QueryCriterion criterion = new QueryCriterion("test", Map.of("field", Map.of("$eq", "value")));
+        QueryCriterion criterion = QueryCriterion.builder()
+                .id("test")
+                .field("field").eq("value")
+                .build();
         QueryResult result = QueryResult.undetermined(criterion, "Test failure reason", Collections.emptyList());
         EvaluationSummary summary = EvaluationSummary.from(List.of(result));
         EvaluationOutcome outcome = new EvaluationOutcome("test-spec", List.of(result), summary);
