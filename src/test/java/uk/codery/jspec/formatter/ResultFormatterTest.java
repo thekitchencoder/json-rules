@@ -355,4 +355,209 @@ class ResultFormatterTest {
         assertThat(yamlFormatter.formatType()).isEqualTo("yaml");
         assertThat(textFormatter.formatType()).isEqualTo("text");
     }
+
+    // ==================== Edge Cases and Error Handling ====================
+
+    @Test
+    void formatters_handleEmptyResults() {
+        EvaluationSummary emptySummary = EvaluationSummary.from(Collections.emptyList());
+        EvaluationOutcome emptyOutcome = new EvaluationOutcome("empty-spec", Collections.emptyList(), emptySummary);
+
+        JsonResultFormatter jsonFormatter = new JsonResultFormatter();
+        YamlResultFormatter yamlFormatter = new YamlResultFormatter();
+        TextResultFormatter textFormatter = new TextResultFormatter();
+
+        String json = jsonFormatter.format(emptyOutcome);
+        String yaml = yamlFormatter.format(emptyOutcome);
+        String text = textFormatter.format(emptyOutcome);
+
+        assertThat(json).isNotBlank();
+        assertThat(yaml).isNotBlank();
+        assertThat(text).isNotBlank();
+
+        assertThat(json).contains("\"total\" : 0");
+        assertThat(yaml).contains("total: 0");
+        assertThat(text).contains("Total:          0 criteria");
+    }
+
+    @Test
+    void formatters_handleReferenceResults() {
+        QueryCriterion query = QueryCriterion.builder()
+                .id("original-check")
+                .field("status").eq("active")
+                .build();
+        QueryResult queryResult = QueryResult.matched(query);
+
+        CriterionReference reference = new CriterionReference("original-check");
+        ReferenceResult refResult = new ReferenceResult(reference, queryResult);
+
+        EvaluationSummary summary = EvaluationSummary.from(List.of(queryResult, refResult));
+        EvaluationOutcome outcome = new EvaluationOutcome("ref-spec", List.of(queryResult, refResult), summary);
+
+        JsonResultFormatter jsonFormatter = new JsonResultFormatter();
+        YamlResultFormatter yamlFormatter = new YamlResultFormatter();
+        TextResultFormatter textFormatter = new TextResultFormatter(true);  // Verbose to show referenced result
+
+        String json = jsonFormatter.format(outcome);
+        String yaml = yamlFormatter.format(outcome);
+        String text = textFormatter.format(outcome);
+
+        assertThat(json).isNotBlank();
+        assertThat(yaml).isNotBlank();
+        assertThat(text).isNotBlank();
+
+        assertThat(text).contains("Type: Reference");
+        assertThat(text).contains("References: original-check");
+    }
+
+    @Test
+    void textFormatter_handlesSpecialCharactersInIds() {
+        QueryCriterion criterion = QueryCriterion.builder()
+                .id("check-with-special-chars-#@!")
+                .field("field").eq("value")
+                .build();
+        QueryResult result = QueryResult.matched(criterion);
+        EvaluationSummary summary = EvaluationSummary.from(List.of(result));
+        EvaluationOutcome outcome = new EvaluationOutcome("special-chars-spec", List.of(result), summary);
+
+        TextResultFormatter formatter = new TextResultFormatter();
+        String text = formatter.format(outcome);
+
+        assertThat(text).contains("check-with-special-chars-#@!");
+    }
+
+    @Test
+    void jsonFormatter_handlesSpecialCharactersInValues() {
+        QueryCriterion criterion = QueryCriterion.builder()
+                .id("test")
+                .field("message").eq("Line1\nLine2\tTabbed")
+                .build();
+        QueryResult result = QueryResult.matched(criterion);
+        EvaluationSummary summary = EvaluationSummary.from(List.of(result));
+        EvaluationOutcome outcome = new EvaluationOutcome("test-spec", List.of(result), summary);
+
+        JsonResultFormatter formatter = new JsonResultFormatter();
+        String json = formatter.format(outcome);
+
+        assertThat(json).isNotBlank();
+        assertThat(json).contains("\\n");  // Newlines should be escaped
+        assertThat(json).contains("\\t");  // Tabs should be escaped
+    }
+
+    @Test
+    void textFormatter_handlesSingleCriterion() {
+        QueryCriterion criterion = QueryCriterion.builder()
+                .id("single")
+                .field("field").eq("value")
+                .build();
+        QueryResult result = QueryResult.matched(criterion);
+        EvaluationSummary summary = EvaluationSummary.from(List.of(result));
+        EvaluationOutcome outcome = new EvaluationOutcome("single-spec", List.of(result), summary);
+
+        TextResultFormatter formatter = new TextResultFormatter();
+        String text = formatter.format(outcome);
+
+        assertThat(text).contains("Total:          1 criterion");  // Singular form
+        assertThat(text).contains("100.0%");
+    }
+
+    @Test
+    void textFormatter_handlesZeroDivision() {
+        EvaluationSummary emptySummary = EvaluationSummary.from(Collections.emptyList());
+        EvaluationOutcome emptyOutcome = new EvaluationOutcome("empty-spec", Collections.emptyList(), emptySummary);
+
+        TextResultFormatter formatter = new TextResultFormatter();
+        String text = formatter.format(emptyOutcome);
+
+        // Should not throw ArithmeticException with 0 total
+        assertThat(text).isNotBlank();
+        assertThat(text).contains("Total:          0 criteria");
+        assertThat(text).doesNotContain("NaN");
+        assertThat(text).doesNotContain("Infinity");
+    }
+
+    @Test
+    void textFormatter_verboseShowsChildResults() {
+        QueryCriterion query1 = QueryCriterion.builder()
+                .id("child1")
+                .field("a").eq(1)
+                .build();
+        QueryCriterion query2 = QueryCriterion.builder()
+                .id("child2")
+                .field("b").eq(2)
+                .build();
+
+        QueryResult result1 = QueryResult.matched(query1);
+        QueryResult result2 = QueryResult.notMatched(query2, List.of("b"));
+
+        CompositeCriterion composite = CompositeCriterion.builder()
+                .id("parent")
+                .and()
+                .criteria(query1, query2)
+                .build();
+        CompositeResult compositeResult = new CompositeResult(composite, EvaluationState.NOT_MATCHED,
+                List.of(result1, result2));
+
+        EvaluationSummary summary = EvaluationSummary.from(List.of(compositeResult));
+        EvaluationOutcome outcome = new EvaluationOutcome("verbose-spec", List.of(compositeResult), summary);
+
+        TextResultFormatter verboseFormatter = new TextResultFormatter(true);
+        TextResultFormatter nonVerboseFormatter = new TextResultFormatter(false);
+
+        String verboseText = verboseFormatter.format(outcome);
+        String nonVerboseText = nonVerboseFormatter.format(outcome);
+
+        // Verbose should show child results
+        assertThat(verboseText).contains("Child Results:");
+        assertThat(verboseText).contains("child1");
+        assertThat(verboseText).contains("child2");
+
+        // Non-verbose should not show child results
+        assertThat(nonVerboseText).doesNotContain("Child Results:");
+    }
+
+    @Test
+    void yamlFormatter_outputDoesNotHaveDocumentStartMarker() {
+        YamlResultFormatter formatter = new YamlResultFormatter();
+        String yaml = formatter.format(sampleOutcome);
+
+        // Should not start with --- (document start marker is disabled)
+        assertThat(yaml).doesNotStartWith("---");
+    }
+
+    @Test
+    void allFormatters_handleFullyDeterminedStatus() {
+        // All matched - fully determined
+        QueryCriterion criterion = QueryCriterion.builder()
+                .id("test")
+                .field("field").eq("value")
+                .build();
+        QueryResult result = QueryResult.matched(criterion);
+        EvaluationSummary summary = EvaluationSummary.from(List.of(result));
+        EvaluationOutcome outcome = new EvaluationOutcome("test-spec", List.of(result), summary);
+
+        TextResultFormatter formatter = new TextResultFormatter();
+        String text = formatter.format(outcome);
+
+        assertThat(text).contains("Status:         Fully Determined");
+        assertThat(summary.fullyDetermined()).isTrue();
+    }
+
+    @Test
+    void allFormatters_handlePartiallyDeterminedStatus() {
+        // Has undetermined - not fully determined
+        QueryCriterion criterion = QueryCriterion.builder()
+                .id("test")
+                .field("field").eq("value")
+                .build();
+        QueryResult result = QueryResult.undetermined(criterion, "Failed", Collections.emptyList());
+        EvaluationSummary summary = EvaluationSummary.from(List.of(result));
+        EvaluationOutcome outcome = new EvaluationOutcome("test-spec", List.of(result), summary);
+
+        TextResultFormatter formatter = new TextResultFormatter();
+        String text = formatter.format(outcome);
+
+        assertThat(text).contains("Status:         Partially Determined");
+        assertThat(summary.fullyDetermined()).isFalse();
+    }
 }

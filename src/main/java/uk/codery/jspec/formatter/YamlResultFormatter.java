@@ -19,7 +19,6 @@ import uk.codery.jspec.result.EvaluationOutcome;
  *
  * <h2>Output Example</h2>
  * <pre>{@code
- * ---
  * specificationId: "order-validation"
  * results:
  * - criterion:
@@ -69,7 +68,7 @@ public record YamlResultFormatter(ObjectMapper objectMapper) implements ResultFo
      * <p>Uses Jackson's YAMLFactory with:
      * <ul>
      *   <li>Minimal quotes (only when necessary)</li>
-     *   <li>Document start marker (---) enabled</li>
+     *   <li>Document start marker (---) disabled for cleaner output</li>
      *   <li>Literal block scalars for multi-line strings</li>
      * </ul>
      */
