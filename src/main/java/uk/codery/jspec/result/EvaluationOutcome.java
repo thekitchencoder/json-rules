@@ -166,7 +166,7 @@ public record EvaluationOutcome(
      */
     public List<EvaluationResult> matchedResults() {
         return results.stream()
-                .filter(EvaluationResult::matched)
+                .filter(r -> r.state().matched())
                 .toList();
     }
 
