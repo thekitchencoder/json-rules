@@ -95,7 +95,7 @@ public class Main {
             System.out.println(formatter.format(outcome));
 
             boolean allMatched = outcome.results().stream()
-                    .allMatch(EvaluationResult::matched);
+                    .allMatch(r -> r.state().matched());
             System.exit(allMatched ? 0 : 1);
 
         } catch (Exception e) {

@@ -21,16 +21,16 @@ public record SummaryResultFormatter(boolean showFailures) implements ResultForm
         log.debug("Formatting evaluation outcome as summary (showFailures={})", showFailures);
 
         long passedQueries = outcome.queryResults().stream()
-                .filter(EvaluationResult::matched)
+                .filter(r -> r.state().matched())
                 .count();
         long failedQueries = outcome.queryResults().stream()
-                .filter(not(EvaluationResult::matched))
+                .filter(r -> !r.state().matched())
                 .count();
         long passedComposites = outcome.compositeResults().stream()
-                .filter(EvaluationResult::matched)
+                .filter(r -> r.state().matched())
                 .count();
         long failedComposites = outcome.compositeResults().stream()
-                .filter(not(EvaluationResult::matched))
+                .filter(r -> !r.state().matched())
                 .count();
 
         StringBuilder sb = new StringBuilder();
@@ -49,18 +49,18 @@ public record SummaryResultFormatter(boolean showFailures) implements ResultForm
             if (failedQueries > 0) {
                 sb.append("\nFailed Queries:\n");
                 outcome.queryResults().stream()
-                        .filter(not(EvaluationResult::matched))
+                        .filter(r -> !r.state().matched())
                         .forEach(r -> sb.append("  ").append(r.id()).append(": ").append( r.reason()).append("\n"));
             }
 
             if (failedComposites > 0) {
                 sb.append("\nFailed Composites:\n");
                 outcome.compositeResults().stream()
-                        .filter(not(EvaluationResult::matched))
+                        .filter(r -> !r.state().matched())
                         .forEach(composite -> {
                             sb.append("  ").append(composite.id()).append("\n");
                             composite.childResults().stream()
-                                    .filter(not(EvaluationResult::matched))
+                                    .filter(r -> !r.state().matched())
                                     .forEach(child -> sb.append("    - ").append(child.id()).append( ": ").append(child.reason()).append("\n"));
                         });
             }

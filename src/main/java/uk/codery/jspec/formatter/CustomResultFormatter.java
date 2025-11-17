@@ -48,7 +48,7 @@ public record CustomResultFormatter(boolean verbose) implements ResultFormatter 
     private void formatQueryResult(StringBuilder sb, QueryResult result, int depth) {
         sb.append(INDENT.repeat(depth)).append(result.id()).append(":\n");
         String indent = INDENT.repeat(depth + 1);
-        sb.append(indent).append("match: ").append(result.matched()).append(":\n");
+        sb.append(indent).append("match: ").append(result.state().matched()).append(":\n");
         sb.append(indent).append("state: ").append(result.state()).append(":\n");
         if (result.reason() != null) {
             sb.append(indent).append("reason: ").append(result.reason()).append("\n");
@@ -64,7 +64,7 @@ public record CustomResultFormatter(boolean verbose) implements ResultFormatter 
         sb.append(result.id()).append(":\n");
 
         sb.append(indent).append("junction: ").append(result.junction()).append("\n");
-        sb.append(indent).append("match: ").append(result.matched()).append(":\n");
+        sb.append(indent).append("match: ").append(result.state().matched()).append(":\n");
         sb.append(indent).append("state: ").append(result.state()).append(":\n");
 
         CompositeResult.Statistics stats = result.statistics();
