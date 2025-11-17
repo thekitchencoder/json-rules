@@ -2,23 +2,24 @@
 
 ## Executive Summary
 
-Your JSON Specification Evaluator is a **production-ready, Spring-independent library** with minimal dependencies (Jackson YAML + Lombok + SLF4J). The codebase consists of ~826 lines of well-architected Java 21 code using modern features (records, sealed classes, pattern matching, streams, functional programming).
+Your JSON Specification Evaluator is a **production-ready, Spring-independent library** with minimal dependencies (Jackson YAML + Lombok + SLF4J). The codebase consists of ~1500 lines of well-architected Java 21 code using modern features (records, sealed classes, pattern matching, streams, functional programming).
 
-**Current State (Updated 2025-11-15):**
+**Current State (Updated 2025-11-17):**
 - ✅ Zero Spring coupling
 - ✅ Clean 3-layer architecture
 - ✅ Thread-safe with parallel evaluation
 - ✅ 13 MongoDB-style operators (all optimized)
-- ✅ **Comprehensive test coverage** (14 test files including unit, integration, operator-specific, builder, and caching tests)
+- ✅ **Comprehensive test coverage** (15 test files including unit, integration, operator-specific, builder, formatter, and caching tests)
 - ✅ **Tri-state evaluation model** (MATCHED/NOT_MATCHED/UNDETERMINED)
 - ✅ **SLF4J logging integration** (graceful degradation with proper logging)
 - ✅ **Comprehensive documentation** (README.md, CLAUDE.md, ERROR_HANDLING_DESIGN.md, CONTRIBUTING.md, CHANGELOG.md)
-- ✅ **Complete JavaDoc coverage** (592 lines of comprehensive JavaDoc across all core classes)
+- ✅ **Complete JavaDoc coverage** (592+ lines of comprehensive JavaDoc across all core classes)
 - ✅ **Regex pattern caching** (Thread-safe LRU cache with ~10-100x performance improvement)
-- ✅ **Modern Java 21 features** (Pattern matching, switch expressions, sealed classes)
+- ✅ **Modern Java 21 features** (Pattern matching, switch expressions, sealed classes, records)
 - ✅ **Performance optimizations** (HashSet-based $all operator, optimized type checking)
 - ✅ **Full extensibility** (OperatorRegistry and OperatorHandler API for custom operators)
 - ✅ **Fluent builder APIs** (CriterionBuilder, CriteriaGroupBuilder, SpecificationBuilder)
+- ✅ **Result formatters** (5 formatters: JSON, YAML, Text, Summary, Custom with 39 tests)
 - ❌ No example projects
 
 ## What Changed Since Original Roadmap
@@ -26,7 +27,7 @@ Your JSON Specification Evaluator is a **production-ready, Spring-independent li
 This roadmap has been updated to reflect the significant progress made on the JSON Specification Evaluator. Here's a quick summary:
 
 **Major Achievements:**
-- ✅ **Testing** - 14 comprehensive test files created (was: "No test coverage")
+- ✅ **Testing** - 15 comprehensive test files created (was: "No test coverage")
 - ✅ **Error Handling** - Tri-state evaluation model implemented with graceful degradation (better than exception approach!)
 - ✅ **Logging** - SLF4J fully integrated (was: "uses System.err.println")
 - ✅ **Documentation** - Comprehensive README, CLAUDE.md, ERROR_HANDLING_DESIGN.md created
@@ -37,11 +38,12 @@ This roadmap has been updated to reflect the significant progress made on the JS
 - ✅ **Type Safety** - Enhanced type checking with improved $exists and $type operator logic
 - ✅ **Extensibility** - Full OperatorRegistry and OperatorHandler API for custom operators
 - ✅ **Builder APIs** - Fluent builders for Criterion, CriteriaGroup, and Specification
+- ✅ **Result Formatters** - 5 formatters (JSON, YAML, Text, Summary, Custom) with 39 comprehensive tests
 
 **Key Remaining Work:**
 - Example projects directory (optional nice-to-have)
 
-**Overall:** The library has progressed from a POC with no tests to a **production-ready, fully-featured, performance-optimized library** with comprehensive testing, graceful error handling, complete JavaDoc coverage, custom operator extensibility, fluent builder APIs, and modern Java 21 features. Phase 1 (Foundation), Phase 2 (Extensibility), Phase 3 (Performance & Observability), and Phase 4 (Documentation) are complete.
+**Overall:** The library has progressed from a POC with no tests to a **production-ready, fully-featured, performance-optimized library** with comprehensive testing, graceful error handling, complete JavaDoc coverage, custom operator extensibility, fluent builder APIs, modern Java 21 features, and multiple result output formats. Phase 1 (Foundation), Phase 2 (Extensibility), Phase 3 (Performance & Observability), Phase 4 (Documentation), and Phase 5 (Result Formatters) are complete.
 
 ---
 
@@ -432,9 +434,115 @@ docs/
 
 ---
 
-## Priority 5: Advanced Features (Future)
+## Priority 5: Result Formatters ✅ **COMPLETED**
 
-### 5.1 Performance Benchmarks
+### 5.1 Formatter Infrastructure ✅ **COMPLETED**
+**Status:** Comprehensive formatter system implemented
+
+- [x] **Create ResultFormatter interface** (formatter/ResultFormatter.java)
+  - Define common contract for all formatters
+  - `format(EvaluationOutcome)` method
+  - `formatType()` method for identification
+
+- [x] **Create FormatterException** (formatter/FormatterException.java)
+  - Consistent error handling across all formatters
+  - Wraps underlying serialization errors
+
+- [x] **Package documentation** (formatter/package-info.java)
+  - Comprehensive usage examples
+  - Spring integration patterns
+  - Format selection patterns
+
+**Result:** Clean formatter infrastructure with consistent API
+
+### 5.2 JSON Formatter ✅ **COMPLETED**
+**Status:** Full JSON support with pretty-printing
+
+- [x] **JsonResultFormatter implementation** (formatter/JsonResultFormatter.java)
+  - Pretty-print mode (default)
+  - Compact mode for machine processing
+  - Custom ObjectMapper support
+  - Thread-safe record implementation
+
+**Features:**
+- Uses Jackson for serialization
+- Configurable indentation
+- Handles special characters properly
+- Supports serialization round-trips
+
+### 5.3 YAML Formatter ✅ **COMPLETED**
+**Status:** Clean YAML output
+
+- [x] **YamlResultFormatter implementation** (formatter/YamlResultFormatter.java)
+  - Minimal quotes for readability
+  - Document start marker disabled
+  - Literal block style for multi-line strings
+  - Custom ObjectMapper support
+
+**Features:**
+- Uses Jackson YAML for serialization
+- Human-readable output
+- Compatible with YAML parsers
+
+### 5.4 Text Formatter ✅ **COMPLETED**
+**Status:** Human-readable text output with verbose mode
+
+- [x] **TextResultFormatter implementation** (formatter/TextResultFormatter.java)
+  - Clear section headers
+  - Summary statistics with percentages
+  - State icons (✓, ✗, ?)
+  - Verbose mode for detailed output
+
+**Features:**
+- Hierarchical result display
+- Child results in verbose mode
+- Missing paths in verbose mode
+- Clean formatting with separators
+
+### 5.5 Additional Formatters ✅ **COMPLETED**
+**Status:** Specialized formatters for specific use cases
+
+- [x] **SummaryResultFormatter** (formatter/SummaryResultFormatter.java)
+  - Concise summary format
+  - Query/composite counts
+  - Optional failure details
+
+- [x] **CustomResultFormatter** (formatter/CustomResultFormatter.java)
+  - Hierarchical format
+  - Composite-focused output
+  - Custom indentation
+
+### 5.6 Formatter Testing ✅ **COMPLETED**
+**Status:** Comprehensive test coverage
+
+- [x] **ResultFormatterTest** (39 tests total)
+  - All formatters tested (JSON, YAML, Text, Summary, Custom)
+  - Edge cases (empty results, special characters, zero division)
+  - Serialization/deserialization round-trips
+  - Verbose vs non-verbose modes
+  - Reference results formatting
+  - Fully determined vs partially determined status
+
+**Result:** 5 formatters with comprehensive testing
+
+### 5.7 Demo Integration ✅ **COMPLETED**
+**Status:** Updated demo to use formatters
+
+- [x] **Update demo/Main.java**
+  - Replace manual JSON formatting with JsonResultFormatter
+  - Add YAML output support (--yaml flag)
+  - Add Text output support (--text flag)
+  - Add Summary output support (--summary flag)
+  - Add Custom output support (--custom flag)
+  - Default to formatted text output
+
+**Result:** Clean demo showcasing all formatters
+
+---
+
+## Priority 6: Advanced Features (Future)
+
+### 6.1 Performance Benchmarks
 **Why:** Users need to know performance characteristics
 
 - [ ] **Add JMH benchmarks**

@@ -19,27 +19,68 @@ This document provides context for AI assistants (like Claude) working with the 
 ```
 jspec/
 ├── pom.xml                                          # Maven configuration
-├── src/main/java/uk/codery/jspec/                  # Core library (12 classes, 757 lines)
+├── src/main/java/uk/codery/jspec/                  # Core library (~1500 lines)
 │   ├── model/                                      # Domain models (what users create)
-│   │   ├── Criterion.java                          # [10 lines] Criterion definition record
-│   │   ├── CriteriaGroup.java                      # [9 lines] Grouped criteria with AND/OR
-│   │   ├── Specification.java                      # [6 lines] Collection of criteria
-│   │   └── Junction.java                           # [6 lines] AND/OR enum
+│   │   ├── Criterion.java                          # Criterion interface
+│   │   ├── QueryCriterion.java                     # MongoDB-style query criterion
+│   │   ├── CompositeCriterion.java                 # Composite criterion with AND/OR
+│   │   ├── CriterionReference.java                 # Reference to another criterion
+│   │   ├── Specification.java                      # Collection of criteria
+│   │   └── Junction.java                           # AND/OR enum
 │   ├── evaluator/                                  # Evaluation engine (what users call)
-│   │   ├── CriterionEvaluator.java                 # [418 lines] Query matching engine
+│   │   ├── CriterionEvaluator.java                 # [488 lines] Query matching engine
 │   │   └── SpecificationEvaluator.java             # [49 lines] Orchestrates evaluation
 │   ├── result/                                     # Result types (what users receive)
-│   │   ├── EvaluationState.java                    # [40 lines] MATCHED/NOT_MATCHED/UNDETERMINED
-│   │   ├── EvaluationResult.java                   # [106 lines] Individual criterion result
-│   │   ├── EvaluationOutcome.java                  # [16 lines] Overall specification result
-│   │   ├── EvaluationSummary.java                  # [60 lines] Evaluation statistics
-│   │   ├── CriteriaGroupResult.java                # [30 lines] CriteriaGroup evaluation result
-│   │   └── Result.java                             # [7 lines] Interface for results
-│   └── operator/                                   # Future: custom operator support
+│   │   ├── EvaluationState.java                    # MATCHED/NOT_MATCHED/UNDETERMINED
+│   │   ├── EvaluationResult.java                   # Sealed interface for results
+│   │   ├── QueryResult.java                        # Result of query criterion
+│   │   ├── CompositeResult.java                    # Result of composite criterion
+│   │   ├── ReferenceResult.java                    # Result of criterion reference
+│   │   ├── EvaluationOutcome.java                  # Overall specification result
+│   │   └── EvaluationSummary.java                  # Evaluation statistics
+│   ├── formatter/                                  # Result formatters (output formats)
+│   │   ├── ResultFormatter.java                    # Formatter interface
+│   │   ├── FormatterException.java                 # Formatter exception
+│   │   ├── JsonResultFormatter.java                # JSON output (pretty/compact)
+│   │   ├── YamlResultFormatter.java                # YAML output
+│   │   ├── TextResultFormatter.java                # Human-readable text output
+│   │   ├── SummaryResultFormatter.java             # Summary text output
+│   │   ├── CustomResultFormatter.java              # Custom hierarchical output
+│   │   └── package-info.java                       # Package documentation
+│   ├── builder/                                    # Fluent API builders
+│   │   ├── CriterionBuilder.java                   # Builder for QueryCriterion
+│   │   ├── CompositeCriterionBuilder.java          # Builder for CompositeCriterion
+│   │   └── SpecificationBuilder.java               # Builder for Specification
+│   └── operator/                                   # Custom operator support
+│       ├── OperatorHandler.java                    # Custom operator interface
+│       ├── OperatorRegistry.java                   # Operator registration
+│       └── package-info.java                       # Package documentation
 ├── src/test/java/uk/codery/jspec/                  # Tests and demo
-│   ├── TriStateEvaluationTest.java                 # Comprehensive test suite
-│   ├── EvaluationSummaryTest.java                  # Summary calculation tests
-│   └── demo/Main.java                              # Demo CLI application
+│   ├── result/                                     # Result tests
+│   │   ├── TriStateEvaluationTest.java             # Tri-state model tests
+│   │   └── EvaluationSummaryTest.java              # Summary tests
+│   ├── evaluator/                                  # Evaluator tests
+│   │   ├── CriterionEvaluatorTest.java             # Core evaluator tests
+│   │   ├── SpecificationEvaluatorTest.java         # Specification tests
+│   │   ├── DotNotationTest.java                    # Navigation tests
+│   │   ├── RegexPatternCacheTest.java              # Cache tests
+│   │   └── CriterionEvaluatorCustomOperatorTest.java # Custom operator tests
+│   ├── model/                                      # Operator tests
+│   │   ├── ComparisonOperatorsTest.java            # $eq, $ne, $gt, etc.
+│   │   ├── CollectionOperatorsTest.java            # $in, $nin, $all, $size
+│   │   └── AdvancedOperatorsTest.java              # $exists, $type, $regex
+│   ├── builder/                                    # Builder tests
+│   │   └── CriterionBuilderTest.java               # Builder API tests
+│   ├── operator/                                   # Operator registry tests
+│   │   └── OperatorRegistryTest.java               # Custom operators
+│   ├── formatter/                                  # Formatter tests
+│   │   └── ResultFormatterTest.java                # All formatters (39 tests)
+│   ├── integration/                                # Integration tests
+│   │   └── EndToEndTest.java                       # Full scenarios
+│   ├── e2e/                                        # End-to-end tests
+│   │   └── EndToEndYamlTest.java                   # YAML-based tests
+│   └── demo/                                       # Demo application
+│       └── Main.java                               # CLI demo with formatters
 └── src/test/resources/                             # Test data
     ├── specification.{json,yaml}                   # Sample specifications
     ├── document.yaml                               # Sample document
@@ -301,6 +342,45 @@ record Specification(String id, List<Criterion> criteria, List<CriteriaGroup> cr
 
 **Design Choice**: Records provide immutability, structural equality, and clean toString() for free.
 
+### Result Formatters
+
+Result formatters provide multiple output formats for evaluation outcomes:
+
+**Available Formatters:**
+- **JsonResultFormatter** - JSON output (pretty-printed or compact)
+- **YamlResultFormatter** - YAML output (clean, minimal quotes)
+- **TextResultFormatter** - Human-readable text with summary statistics
+- **SummaryResultFormatter** - Concise summary format (queries/composites counts)
+- **CustomResultFormatter** - Custom hierarchical format
+
+**Implementation Details:**
+- All formatters implement `ResultFormatter` interface
+- Formatters are immutable records (thread-safe, reusable)
+- JsonResultFormatter and YamlResultFormatter use Jackson for serialization
+- TextResultFormatter provides verbose/non-verbose modes
+- All formatters use SLF4J logging
+
+**Usage Example:**
+```java
+// JSON output (pretty-printed)
+ResultFormatter formatter = new JsonResultFormatter(true);
+String json = formatter.format(outcome);
+
+// YAML output
+ResultFormatter formatter = new YamlResultFormatter();
+String yaml = formatter.format(outcome);
+
+// Text output with verbose details
+ResultFormatter formatter = new TextResultFormatter(true);
+String text = formatter.format(outcome);
+```
+
+**Testing:**
+- ResultFormatterTest.java contains 39 comprehensive tests
+- Tests cover all formatters, edge cases, and special characters
+- Tests verify serialization/deserialization round-trips
+- Tests validate verbose vs non-verbose modes
+
 ## Development Guidelines
 
 ### Making Code Changes
@@ -519,11 +599,12 @@ c676814 - test: add RegexPatternCacheTest for regex caching and thread safety
 
 ## Known Limitations
 
-1. **No custom operator support** - Operators are hardcoded (planned fix - see IMPROVEMENT_ROADMAP.md § 2.1)
+1. ✅ ~~**No custom operator support**~~ - **RESOLVED**: OperatorRegistry and OperatorHandler API implemented
 2. ✅ ~~**No regex caching**~~ - **RESOLVED**: Thread-safe LRU cache implemented
-3. ✅ ~~**Package-private classes**~~ - **RESOLVED**: RuleEvaluator is now public
-4. **No builder API** - Verbose Map construction (optional enhancement - see IMPROVEMENT_ROADMAP.md § 2.3)
-5. **No Spring integration examples** - Works with Spring but no dedicated example project (see README.md for Spring configuration)
+3. ✅ ~~**Package-private classes**~~ - **RESOLVED**: CriterionEvaluator is now public
+4. ✅ ~~**No builder API**~~ - **RESOLVED**: CriterionBuilder, CompositeCriterionBuilder, SpecificationBuilder implemented
+5. ✅ ~~**No result formatters**~~ - **RESOLVED**: 5 formatters implemented (JSON, YAML, Text, Summary, Custom)
+6. **No Spring integration examples** - Works with Spring but no dedicated example project (see README.md for Spring configuration)
 
 See IMPROVEMENT_ROADMAP.md for planned solutions and detailed status.
 
@@ -700,7 +781,9 @@ For questions about this codebase:
 
 ---
 
-**Last Updated**: 2025-11-15 (Added terminology section documenting Rules→Criteria pivot and Junction vs Operator distinction)
-**Version**: 0.1.0-SNAPSHOT
+**Last Updated**: 2025-11-17 (Added formatter package with 5 formatters: JSON, YAML, Text, Summary, Custom)
+**Version**: 0.2.0-SNAPSHOT
 **Java Version**: 21
-**Total Lines of Code**: ~826 (main source)
+**Total Lines of Code**: ~1500 (main source)
+**Test Files**: 15 test files with comprehensive coverage
+**Formatters**: 5 formatters (JSON, YAML, Text, Summary, Custom)

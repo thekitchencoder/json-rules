@@ -3,39 +3,69 @@ package uk.codery.jspec.demo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import uk.codery.jspec.evaluator.SpecificationEvaluator;
+import uk.codery.jspec.formatter.*;
 import uk.codery.jspec.model.Specification;
 import uk.codery.jspec.result.EvaluationOutcome;
 import uk.codery.jspec.result.EvaluationResult;
-import uk.codery.jspec.result.CompositeResult;
-import uk.codery.jspec.result.QueryResult;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static java.util.function.Predicate.not;
 
 /**
- * Alternative CLI that uses Jackson (jackson-dataformat-yaml) to parse both the
- * input document and the specification from YAML files. The command-line
- * interface mirrors YamlCriterionEvaluatorCli.
- * Usage: java JacksonYamlCriterionEvaluatorCli <criteria.yaml> <document.yaml> [--json] [--summary]
+ * Demo CLI application for JSON Specification Evaluator.
+ *
+ * <p>Demonstrates the use of formatters to output evaluation results in different formats:
+ * <ul>
+ *   <li>JSON - Structured JSON output</li>
+ *   <li>YAML - Human-readable YAML output</li>
+ *   <li>Text - Formatted text with summary and detailed results</li>
+ * </ul>
+ *
+ * <p>Usage: java Main &lt;criteria.yaml&gt; &lt;document.yaml&gt; [options]
+ *
+ * <h2>Options</h2>
+ * <ul>
+ *   <li>--json     Output results in JSON format (pretty-printed)</li>
+ *   <li>--yaml     Output results in YAML format</li>
+ *   <li>--text     Output results in formatted text (showFailures mode)</li>
+ *   <li>--summary  Only show summary of results (legacy format)</li>
+ * </ul>
+ *
+ * <h2>Examples</h2>
+ * <pre>{@code
+ * # JSON output
+ * java Main specification.yaml document.yaml --json
+ *
+ * # YAML output
+ * java Main specification.yaml document.yaml --yaml
+ *
+ * # Text output (showFailures)
+ * java Main specification.yaml document.yaml --text
+ *
+ * # Summary only
+ * java Main specification.yaml document.yaml --summary
+ * }</pre>
  */
 public class Main {
     public static void main(String[] args) {
         if (args.length < 2) {
-            System.err.println("Usage: java JacksonYamlCriterionEvaluatorCli <criteria.yaml> <document.yaml> [--json] [--summary]");
+            System.err.println("Usage: java Main <criteria.yaml> <document.yaml> [options]");
             System.err.println("\nOptions:");
-            System.err.println("  --json     Output results in JSON format");
-            System.err.println("  --summary  Only show summary of results");
+            System.err.println("  --json     Output results in JSON format (pretty-printed)");
+            System.err.println("  --yaml     Output results in YAML format");
+            System.err.println("  --text     Output results in formatted text (showFailures mode)");
+            System.err.println("  --custom   Output results using custom formatter");
+            System.err.println("  --summary  Only show summary of results ");
+            System.err.println("\nDefault: Formatted text output (non-showFailures)");
             System.exit(1);
         }
 
         String specFile = args[0];
         String docFile = args[1];
         boolean jsonOutput = Arrays.asList(args).contains("--json");
+        boolean yamlOutput = Arrays.asList(args).contains("--yaml");
+        boolean textOutput = Arrays.asList(args).contains("--text");
+        boolean customOutput = Arrays.asList(args).contains("--custom");
         boolean summaryOnly = Arrays.asList(args).contains("--summary");
 
         try {
@@ -46,14 +76,23 @@ public class Main {
 
             SpecificationEvaluator evaluator = new SpecificationEvaluator();
             EvaluationOutcome outcome = evaluator.evaluate(doc, specification);
-
+            ResultFormatter formatter;
             if (jsonOutput) {
-                outputJson(outcome);
+                formatter = new JsonResultFormatter();
+            } else if (yamlOutput) {
+                formatter = new YamlResultFormatter();
+            } else if (textOutput) {
+                formatter = new TextResultFormatter(true);
             } else if (summaryOnly) {
-                outputSummary(outcome);
+                formatter = new SummaryResultFormatter(true);
+            } else if (customOutput) {
+                formatter = new CustomResultFormatter(true);
             } else {
-                outputDetailed(outcome);
+                // Default: formatted text (non-showFailures)
+               formatter = new TextResultFormatter(false);
             }
+
+            System.out.println(formatter.format(outcome));
 
             boolean allMatched = outcome.results().stream()
                     .allMatch(EvaluationResult::matched);
@@ -64,83 +103,5 @@ public class Main {
             e.printStackTrace();
             System.exit(1);
         }
-    }
-
-    private static void outputDetailed(EvaluationOutcome outcome) {
-        System.out.println(outcome.specificationId() + " evaluation results");
-        outcome.results().forEach(result -> System.out.println(result.toString()));
-    }
-
-    private static void outputSummary(EvaluationOutcome outcome) {
-        long passedQueries = outcome.queryResults().stream()
-                .filter(EvaluationResult::matched)
-                .count();
-        long failedQueries = outcome.queryResults().stream()
-                .filter(not(EvaluationResult::matched))
-                .count();
-        long passedComposites = outcome.compositeResults().stream()
-                .filter(EvaluationResult::matched)
-                .count();
-        long failedComposites = outcome.compositeResults().stream()
-                .filter(not(EvaluationResult::matched))
-                .count();
-
-        System.out.println(outcome.specificationId() + " evaluation summary.");
-        System.out.println("Queries: " + (passedQueries + failedQueries) + " total, " + passedQueries + " passed, " + failedQueries + " failed");
-        System.out.println("Composites: " + (passedComposites + failedComposites) + " total, " + passedComposites + " passed, " + failedComposites + " failed");
-
-        if (failedQueries > 0) {
-            System.out.println("\nFailed Queries:");
-            outcome.queryResults().stream()
-                    .filter(not(EvaluationResult::matched))
-                    .forEach(r -> System.out.println("  " + r.id() + ": " + r.reason()));
-        }
-
-        if (failedComposites > 0) {
-            System.out.println("\nFailed Composites:");
-            outcome.compositeResults().stream()
-                    .filter(not(EvaluationResult::matched))
-                    .forEach(composite -> {
-                        System.out.println("  " + composite.id() + " (" + composite.junction() + ")");
-                        composite.childResults().stream()
-                                .filter(not(EvaluationResult::matched))
-                                .forEach(child -> System.out.println("    - " + child.id() + ": " + child.reason()));
-                    });
-        }
-    }
-
-    private static void outputJson(EvaluationOutcome outcome) {
-        System.out.println("{");
-        System.out.println("  \"specification\": \"" + outcome.specificationId() + "\",");
-        System.out.println("  \"queries\": [");
-        List<QueryResult> queryResultList = new ArrayList<>(outcome.queryResults());
-        for (int i = 0; i < queryResultList.size(); i++) {
-            QueryResult r = queryResultList.get(i);
-            System.out.print("    {\"id\": \"" + r.id() + "\", \"matched\": " + r.matched());
-            if (r.missingPaths() != null && !r.missingPaths().isEmpty()) {
-                System.out.print(", \"missingPaths\": [" + String.join(", ", r.missingPaths().stream().map(p -> "\"" + p + "\"").toArray(String[]::new)) + "]");
-            }
-            System.out.print("}");
-            if (i < queryResultList.size() - 1) System.out.println(",");
-            else System.out.println();
-        }
-        System.out.println("  ],");
-        System.out.println("  \"composites\": [");
-
-        for (int i = 0; i < outcome.compositeResults().size(); i++) {
-            CompositeResult composite = outcome.compositeResults().get(i);
-            System.out.print("    {\"id\": \"" + composite.id() + "\", \"junction\": \"" + composite.junction() + "\", \"matched\": " + composite.matched() + ", \"children\": [");
-            List<EvaluationResult> children = new ArrayList<>(composite.childResults());
-            for (int j = 0; j < children.size(); j++) {
-                EvaluationResult child = children.get(j);
-                System.out.print("{\"id\": \"" + child.id() + "\", \"matched\": " + child.matched() + "}");
-                if (j < children.size() - 1) System.out.print(", ");
-            }
-            System.out.print("]}");
-            if (i < outcome.compositeResults().size() - 1) System.out.println(",");
-            else System.out.println();
-        }
-        System.out.println("  ]");
-        System.out.println("}");
     }
 }
