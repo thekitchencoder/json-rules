@@ -13,7 +13,7 @@
  * <dependency>
  *     <groupId>uk.codery</groupId>
  *     <artifactId>jspec</artifactId>
- *     <version>0.4.1</version>
+ *     <version>0.5.1</version>
  * </dependency>
  */
 
