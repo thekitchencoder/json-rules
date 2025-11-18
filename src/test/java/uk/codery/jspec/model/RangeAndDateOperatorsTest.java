@@ -617,4 +617,393 @@ class RangeAndDateOperatorsTest {
 
         assertThat(result.state()).isEqualTo(EvaluationState.UNDETERMINED);
     }
+
+    // ========== Additional Edge Case Tests for Coverage ==========
+
+    @Test
+    void and_withInvalidConditionType_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("value", 42);
+        // One of the conditions is not a Map
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("value", Map.of("$and", List.of(
+                Map.of("$gte", 0),
+                "not a map"
+            ))));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void or_withInvalidConditionType_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("value", 42);
+        // One of the conditions is not a Map
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("value", Map.of("$or", List.of(
+                "not a map",
+                Map.of("$eq", 42)
+            ))));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void and_withNullCondition_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("value", 42);
+        List<Object> conditions = new java.util.ArrayList<>();
+        conditions.add(Map.of("$gte", 0));
+        conditions.add(null);
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("value", Map.of("$and", conditions)));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void or_withNullCondition_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("value", 42);
+        List<Object> conditions = new java.util.ArrayList<>();
+        conditions.add(null);
+        conditions.add(Map.of("$eq", 42));
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("value", Map.of("$or", conditions)));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void and_withNullOperand_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("value", 42);
+        Map<String, Object> query = new java.util.HashMap<>();
+        query.put("$and", null);
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("value", query));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void or_withNullOperand_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("value", 42);
+        Map<String, Object> query = new java.util.HashMap<>();
+        query.put("$or", null);
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("value", query));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void between_withEmptyList_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("value", 42);
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("value", Map.of("$between", List.of())));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void between_withSingleElement_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("value", 42);
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("value", Map.of("$between", List.of(100))));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void between_withNullOperand_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("value", 42);
+        Map<String, Object> query = new java.util.HashMap<>();
+        query.put("$between", null);
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("value", query));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void dateBefore_withEpochSeconds_shouldMatch() {
+        // Small number should be treated as epoch seconds
+        // 1704067200 seconds = 2024-01-01T00:00:00Z
+        Map<String, Object> doc = Map.of("timestamp", 1704067200);
+        // 1735689600 seconds = 2025-01-01T00:00:00Z
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("timestamp", Map.of("$dateBefore", 1735689600)));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void dateAfter_withEpochSeconds_shouldMatch() {
+        // Small number should be treated as epoch seconds
+        // 1735689600 seconds = 2025-01-01T00:00:00Z
+        Map<String, Object> doc = Map.of("timestamp", 1735689600);
+        // 1704067200 seconds = 2024-01-01T00:00:00Z
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("timestamp", Map.of("$dateAfter", 1704067200)));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void dateBefore_withNullOperand_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("date", "2024-01-01");
+        Map<String, Object> query = new java.util.HashMap<>();
+        query.put("$dateBefore", null);
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("date", query));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void dateAfter_withNullOperand_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("date", "2024-01-01");
+        Map<String, Object> query = new java.util.HashMap<>();
+        query.put("$dateAfter", null);
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("date", query));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void dateBefore_withNullValue_shouldNotMatch() {
+        Map<String, Object> doc = new java.util.HashMap<>();
+        doc.put("date", null);
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("date", Map.of("$dateBefore", "2025-01-01")));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        // Null value cannot be parsed to Instant
+        assertThat(result.state()).isEqualTo(EvaluationState.UNDETERMINED);
+    }
+
+    @Test
+    void dateAfter_withNullValue_shouldNotMatch() {
+        Map<String, Object> doc = new java.util.HashMap<>();
+        doc.put("date", null);
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("date", Map.of("$dateAfter", "2024-01-01")));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        // Null value cannot be parsed to Instant
+        assertThat(result.state()).isEqualTo(EvaluationState.UNDETERMINED);
+    }
+
+    @Test
+    void dateBefore_withInstantObject_shouldMatch() {
+        // Test with actual Instant object
+        Instant past = Instant.parse("2024-01-01T00:00:00Z");
+        Instant future = Instant.parse("2025-01-01T00:00:00Z");
+        Map<String, Object> doc = Map.of("timestamp", past);
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("timestamp", Map.of("$dateBefore", future)));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void dateAfter_withInstantObject_shouldMatch() {
+        // Test with actual Instant object
+        Instant past = Instant.parse("2024-01-01T00:00:00Z");
+        Instant future = Instant.parse("2025-01-01T00:00:00Z");
+        Map<String, Object> doc = Map.of("timestamp", future);
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("timestamp", Map.of("$dateAfter", past)));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void dateBefore_withUnsupportedType_shouldNotMatch() {
+        // Boolean is not a supported date type
+        Map<String, Object> doc = Map.of("flag", true);
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("flag", Map.of("$dateBefore", "2025-01-01")));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void dateAfter_withUnsupportedType_shouldNotMatch() {
+        // List is not a supported date type
+        Map<String, Object> doc = Map.of("items", List.of("a", "b"));
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("items", Map.of("$dateAfter", "2024-01-01")));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void dateBefore_withIsoDateTimeWithOffset_shouldMatch() {
+        Map<String, Object> doc = Map.of("timestamp", "2024-01-01T10:00:00+02:00");
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("timestamp", Map.of("$dateBefore", "2024-01-01T12:00:00+02:00")));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void between_withNegativeNumbers_shouldMatch() {
+        Map<String, Object> doc = Map.of("temperature", -5);
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("temperature", Map.of("$between", List.of(-10, 0))));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void between_withSameMinMax_shouldMatch() {
+        Map<String, Object> doc = Map.of("value", 42);
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("value", Map.of("$between", List.of(42, 42))));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void and_withSingleCondition_shouldMatch() {
+        Map<String, Object> doc = Map.of("value", 50);
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("value", Map.of("$and", List.of(
+                Map.of("$gte", 0)
+            ))));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void or_withSingleCondition_shouldMatch() {
+        Map<String, Object> doc = Map.of("value", 50);
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("value", Map.of("$or", List.of(
+                Map.of("$gte", 0)
+            ))));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void dateBefore_withNowCaseInsensitive_shouldMatch() {
+        Map<String, Object> doc = Map.of("expiryDate", "2020-01-01");
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("expiryDate", Map.of("$dateBefore", "NOW")));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void dateAfter_withMixedNowCase_shouldMatch() {
+        Map<String, Object> doc = Map.of("scheduledDate", "2099-01-01");
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("scheduledDate", Map.of("$dateAfter", "NoW")));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void and_nestedOr_shouldMatch() {
+        Map<String, Object> doc = Map.of("value", 50);
+        // All must match: (value >= 0) AND (value == 50 OR value == 100)
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("value", Map.of("$and", List.of(
+                Map.of("$gte", 0),
+                Map.of("$or", List.of(
+                    Map.of("$eq", 50),
+                    Map.of("$eq", 100)
+                ))
+            ))));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void or_nestedAnd_shouldMatch() {
+        Map<String, Object> doc = Map.of("value", 50);
+        // Any must match: (value >= 100 AND value <= 200) OR (value == 50)
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("value", Map.of("$or", List.of(
+                Map.of("$and", List.of(
+                    Map.of("$gte", 100),
+                    Map.of("$lte", 200)
+                )),
+                Map.of("$eq", 50)
+            ))));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void between_withMixedTypes_shouldMatch() {
+        // Integer value with Double bounds
+        Map<String, Object> doc = Map.of("value", 50);
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("value", Map.of("$between", List.of(0.5, 100.5))));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void dateBefore_withDoubleEpochMillis_shouldMatch() {
+        // Test with Double instead of Long
+        Map<String, Object> doc = Map.of("timestamp", 1704067200000.0);
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("timestamp", Map.of("$dateBefore", 1735689600000.0)));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
 }

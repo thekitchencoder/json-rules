@@ -514,4 +514,212 @@ class StringAndLogicalOperatorsTest {
 
         assertThat(result.state()).isEqualTo(EvaluationState.UNDETERMINED);
     }
+
+    // ========== Additional Edge Case Tests for Coverage ==========
+
+    @Test
+    void contains_withNullOperand_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("description", "test");
+        // Create a map with null value - need to use HashMap since Map.of doesn't allow nulls
+        Map<String, Object> query = new java.util.HashMap<>();
+        query.put("$contains", null);
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("description", query));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void startsWith_withNullOperand_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("name", "test");
+        Map<String, Object> query = new java.util.HashMap<>();
+        query.put("$startsWith", null);
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("name", query));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void endsWith_withNullOperand_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("name", "test");
+        Map<String, Object> query = new java.util.HashMap<>();
+        query.put("$endsWith", null);
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("name", query));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void contains_withNonStringOperandOnString_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("description", "test string");
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("description", Map.of("$contains", 123)));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void startsWith_withNonStringOperand_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("name", "test");
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("name", Map.of("$startsWith", 123)));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void endsWith_withNonStringOperand_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("name", "test");
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("name", Map.of("$endsWith", 123)));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void not_withNullOperand_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("status", "ACTIVE");
+        Map<String, Object> query = new java.util.HashMap<>();
+        query.put("$not", null);
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("status", query));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void contains_collectionWithNullElement_shouldMatch() {
+        // Test that collection contains works with null elements
+        List<Object> listWithNull = new java.util.ArrayList<>();
+        listWithNull.add("a");
+        listWithNull.add(null);
+        listWithNull.add("b");
+        Map<String, Object> doc = Map.of("items", listWithNull);
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("items", Map.of("$contains", "a")));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void contains_withBooleanValue_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("flag", true);
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("flag", Map.of("$contains", "true")));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void startsWith_withEmptyValue_shouldMatch() {
+        Map<String, Object> doc = Map.of("name", "");
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("name", Map.of("$startsWith", "")));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void endsWith_withEmptyValue_shouldMatch() {
+        Map<String, Object> doc = Map.of("name", "");
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("name", Map.of("$endsWith", "")));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void not_withNestedUnknownOperator_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("value", 42);
+        QueryCriterion criterion = new QueryCriterion("test",
+            Map.of("value", Map.of("$not", Map.of("$unknownOp", "test"))));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        // $not inverts UNDETERMINED from unknown operator, which becomes NOT_MATCHED
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void contains_withMapValue_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("nested", Map.of("key", "value"));
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("nested", Map.of("$contains", "key")));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void startsWith_withListValue_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("items", List.of("a", "b", "c"));
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("items", Map.of("$startsWith", "a")));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void endsWith_withListValue_shouldNotMatch() {
+        Map<String, Object> doc = Map.of("items", List.of("a", "b", "c"));
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("items", Map.of("$endsWith", "c")));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.NOT_MATCHED);
+    }
+
+    @Test
+    void contains_specialCharacters_shouldMatch() {
+        Map<String, Object> doc = Map.of("text", "Hello, World! @#$%^&*()");
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("text", Map.of("$contains", "@#$%")));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void startsWith_specialCharacters_shouldMatch() {
+        Map<String, Object> doc = Map.of("text", "@user: message");
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("text", Map.of("$startsWith", "@user")));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void endsWith_specialCharacters_shouldMatch() {
+        Map<String, Object> doc = Map.of("filename", "data.tar.gz");
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("filename", Map.of("$endsWith", ".tar.gz")));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
+
+    @Test
+    void contains_unicodeCharacters_shouldMatch() {
+        Map<String, Object> doc = Map.of("text", "Hello 世界 🌍");
+        QueryCriterion criterion = new QueryCriterion("test", Map.of("text", Map.of("$contains", "世界")));
+
+        EvaluationResult result = evaluator.evaluateQuery(doc, criterion);
+
+        assertThat(result.state()).isEqualTo(EvaluationState.MATCHED);
+    }
 }
