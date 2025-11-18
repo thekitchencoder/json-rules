@@ -1,0 +1,20 @@
+id: user-eligibility
+criteria:
+  - id: age-check
+    query:
+      age:
+        $gte: 18
+  - id: status-check
+    query:
+      status:
+        $eq: active
+  - id: email-exists
+    query:
+      email:
+        $exists: true
+  - id: eligibility
+    junction: AND
+    criteria:
+      - age-check
+      - status-check
+      - email-exists
