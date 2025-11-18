@@ -11,7 +11,7 @@
 - Priority 4 (Documentation) - 100% complete (JavaDoc + README + design docs)
 - Priority 5 (Result Formatters) - 100% complete (JSON, YAML, Text, Summary, Custom)
 - Core bugs fixed (all 3 known issues resolved)
-- Comprehensive README with all 13 operators documented
+- Comprehensive README with all 18 operators documented
 - Builder pattern APIs - 100% complete (CriterionBuilder + CriteriaGroupBuilder + SpecificationBuilder)
 - Result formatters - 100% complete (5 formatters with 39 tests)
 
@@ -35,7 +35,7 @@
 ## 📋 Priority 1: Foundation (CRITICAL)
 
 ### Testing (Week 1)
-- [x] Unit tests for all 13 operators in CriterionEvaluator
+- [x] Unit tests for all 18 operators in CriterionEvaluator
 - [x] Unit tests for SpecificationEvaluator (parallel evaluation, result caching)
 - [x] Integration tests for end-to-end scenarios
 - [x] Edge case testing (nulls, type mismatches, deep nesting)
@@ -168,31 +168,31 @@
 
 ### Additional Operators
 
-#### Tier 1 - High Priority (Common Use, High Impact)
+#### Tier 1 - High Priority (Common Use, High Impact) ✅ **COMPLETED**
 
 These operators eliminate common regex patterns and provide essential negation:
 
-- [ ] **`$contains`** - Substring/element check
+- [x] **`$contains`** - Substring/element check ✅
   ```java
   // String: {"description": {"$contains": "urgent"}}
   // Array: {"tags": {"$contains": "vip"}}
   ```
   **Why**: Extremely common, avoids regex for simple cases, works on both strings and arrays
 
-- [ ] **`$not`** - Invert any condition
+- [x] **`$not`** - Invert any condition ✅
   ```java
   {"status": {"$not": {"$in": ["BANNED", "SUSPENDED"]}}}
   ```
   **Why**: Essential for negation without creating duplicate criteria
 
-- [ ] **`$startsWith`** - String prefix match
+- [x] **`$startsWith`** - String prefix match ✅
   ```java
   {"email": {"$startsWith": "admin@"}}
   {"filename": {"$startsWith": "/var/log/"}}
   ```
   **Why**: Very common pattern, clearer and faster than regex
 
-- [ ] **`$endsWith`** - String suffix match
+- [x] **`$endsWith`** - String suffix match ✅
   ```java
   {"filename": {"$endsWith": ".pdf"}}
   {"email": {"$endsWith": "@company.com"}}

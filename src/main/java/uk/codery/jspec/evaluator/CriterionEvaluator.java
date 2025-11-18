@@ -38,7 +38,19 @@ import java.util.regex.PatternSyntaxException;
  *   <li><b>$size</b> - Array size: {@code {field: {$size: 5}}}</li>
  * </ul>
  *
- * <h3>Advanced Operators (3)</h3>
+ * <h3>String Operators (3)</h3>
+ * <ul>
+ *   <li><b>$contains</b> - Substring/element check: {@code {field: {$contains: "value"}}}</li>
+ *   <li><b>$startsWith</b> - String prefix match: {@code {field: {$startsWith: "prefix"}}}</li>
+ *   <li><b>$endsWith</b> - String suffix match: {@code {field: {$endsWith: ".pdf"}}}</li>
+ * </ul>
+ *
+ * <h3>Logical Operators (1)</h3>
+ * <ul>
+ *   <li><b>$not</b> - Invert condition: {@code {field: {$not: {$eq: "value"}}}}</li>
+ * </ul>
+ *
+ * <h3>Advanced Operators (4)</h3>
  * <ul>
  *   <li><b>$exists</b> - Field existence: {@code {field: {$exists: true}}}</li>
  *   <li><b>$type</b> - Type check: {@code {field: {$type: "string"}}}</li>
@@ -267,6 +279,9 @@ public class CriterionEvaluator {
         operators.put("$gte", (val, operand) -> compare(val, operand) >= 0);
         operators.put("$lt", (val, operand) -> compare(val, operand) < 0);
         operators.put("$lte", (val, operand) -> compare(val, operand) <= 0);
+        operators.put("$contains", this::evaluateContainsOperator);
+        operators.put("$startsWith", this::evaluateStartsWithOperator);
+        operators.put("$endsWith", this::evaluateEndsWithOperator);
         registerInternalOperators();
     }
 
@@ -284,6 +299,7 @@ public class CriterionEvaluator {
         operators.put("$size", this::evaluateSizeOperator);
         operators.put("$elemMatch", this::evaluateElemMatchOperator);
         operators.put("$all", this::evaluateAllOperator);
+        operators.put("$not", this::evaluateNotOperator);
     }
 
     private boolean evaluateInOperator(Object val, Object operand) {
@@ -455,6 +471,88 @@ public class CriterionEvaluator {
             return new HashSet<>(valList).containsAll(queryList);
         } catch (Exception e) {
             log.warn("Error evaluating $all operator: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    private boolean evaluateContainsOperator(Object val, Object operand) {
+        try {
+            if (val == null || operand == null) {
+                return false;
+            }
+            // String contains substring
+            if (val instanceof String str && operand instanceof String substring) {
+                return str.contains(substring);
+            }
+            // Collection contains element
+            if (val instanceof Collection<?> collection) {
+                return collection.contains(operand);
+            }
+            log.debug("Operator $contains expects String or Collection value, got {} - treating as not matched",
+                        val.getClass().getSimpleName());
+            return false;
+        } catch (Exception e) {
+            log.warn("Error evaluating $contains operator: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    private boolean evaluateStartsWithOperator(Object val, Object operand) {
+        try {
+            if (!(val instanceof String str)) {
+                log.debug("Operator $startsWith expects String value, got {} - treating as not matched",
+                            val == null ? "null" : val.getClass().getSimpleName());
+                return false;
+            }
+            if (!(operand instanceof String prefix)) {
+                log.warn("Operator $startsWith expects String operand, got {} - treating as not matched",
+                           operand == null ? "null" : operand.getClass().getSimpleName());
+                return false;
+            }
+            return str.startsWith(prefix);
+        } catch (Exception e) {
+            log.warn("Error evaluating $startsWith operator: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    private boolean evaluateEndsWithOperator(Object val, Object operand) {
+        try {
+            if (!(val instanceof String str)) {
+                log.debug("Operator $endsWith expects String value, got {} - treating as not matched",
+                            val == null ? "null" : val.getClass().getSimpleName());
+                return false;
+            }
+            if (!(operand instanceof String suffix)) {
+                log.warn("Operator $endsWith expects String operand, got {} - treating as not matched",
+                           operand == null ? "null" : operand.getClass().getSimpleName());
+                return false;
+            }
+            return str.endsWith(suffix);
+        } catch (Exception e) {
+            log.warn("Error evaluating $endsWith operator: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    private boolean evaluateNotOperator(Object val, Object operand) {
+        try {
+            if (!(operand instanceof Map)) {
+                log.warn("Operator $not expects Map operand (nested query), got {} - treating as not matched",
+                           operand == null ? "null" : operand.getClass().getSimpleName());
+                return false;
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> nestedQuery = (Map<String, Object>) operand;
+
+            // Evaluate the nested query and invert the result
+            InnerResult result = evaluateOperatorQuery(val, nestedQuery);
+
+            // Invert: MATCHED -> false (NOT_MATCHED), NOT_MATCHED -> true (MATCHED)
+            // UNDETERMINED stays as false (will be treated as NOT_MATCHED)
+            return result.state == EvaluationState.NOT_MATCHED;
+        } catch (Exception e) {
+            log.warn("Error evaluating $not operator: {}", e.getMessage(), e);
             return false;
         }
     }
