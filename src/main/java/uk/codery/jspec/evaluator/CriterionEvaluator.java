@@ -7,6 +7,13 @@ import uk.codery.jspec.operator.OperatorRegistry;
 import uk.codery.jspec.result.QueryResult;
 import uk.codery.jspec.result.EvaluationState;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.TemporalAccessor;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -45,9 +52,22 @@ import java.util.regex.PatternSyntaxException;
  *   <li><b>$endsWith</b> - String suffix match: {@code {field: {$endsWith: ".pdf"}}}</li>
  * </ul>
  *
- * <h3>Logical Operators (1)</h3>
+ * <h3>Logical Operators (3)</h3>
  * <ul>
  *   <li><b>$not</b> - Invert condition: {@code {field: {$not: {$eq: "value"}}}}</li>
+ *   <li><b>$and</b> - All conditions must match: {@code {field: {$and: [{$gte: 18}, {$lt: 65}]}}}</li>
+ *   <li><b>$or</b> - Any condition must match: {@code {field: {$or: [{$eq: 0}, {$gte: 80}]}}}</li>
+ * </ul>
+ *
+ * <h3>Range Operators (1)</h3>
+ * <ul>
+ *   <li><b>$between</b> - Inclusive range: {@code {field: {$between: [100, 500]}}}</li>
+ * </ul>
+ *
+ * <h3>Date Operators (2)</h3>
+ * <ul>
+ *   <li><b>$dateBefore</b> - Date less than: {@code {field: {$dateBefore: "2025-01-01"}}}</li>
+ *   <li><b>$dateAfter</b> - Date greater than: {@code {field: {$dateAfter: "2024-01-01"}}}</li>
  * </ul>
  *
  * <h3>Advanced Operators (4)</h3>
@@ -282,6 +302,9 @@ public class CriterionEvaluator {
         operators.put("$contains", this::evaluateContainsOperator);
         operators.put("$startsWith", this::evaluateStartsWithOperator);
         operators.put("$endsWith", this::evaluateEndsWithOperator);
+        operators.put("$between", this::evaluateBetweenOperator);
+        operators.put("$dateBefore", this::evaluateDateBeforeOperator);
+        operators.put("$dateAfter", this::evaluateDateAfterOperator);
         registerInternalOperators();
     }
 
@@ -300,6 +323,8 @@ public class CriterionEvaluator {
         operators.put("$elemMatch", this::evaluateElemMatchOperator);
         operators.put("$all", this::evaluateAllOperator);
         operators.put("$not", this::evaluateNotOperator);
+        operators.put("$and", this::evaluateAndOperator);
+        operators.put("$or", this::evaluateOrOperator);
     }
 
     private boolean evaluateInOperator(Object val, Object operand) {
@@ -555,6 +580,198 @@ public class CriterionEvaluator {
             log.warn("Error evaluating $not operator: {}", e.getMessage(), e);
             return false;
         }
+    }
+
+    private boolean evaluateAndOperator(Object val, Object operand) {
+        try {
+            if (!(operand instanceof List<?> conditions)) {
+                log.warn("Operator $and expects List of conditions, got {} - treating as not matched",
+                           operand == null ? "null" : operand.getClass().getSimpleName());
+                return false;
+            }
+
+            // All conditions must match
+            for (Object condition : conditions) {
+                if (!(condition instanceof Map)) {
+                    log.warn("Each condition in $and must be a Map, got {} - treating as not matched",
+                               condition == null ? "null" : condition.getClass().getSimpleName());
+                    return false;
+                }
+                @SuppressWarnings("unchecked")
+                Map<String, Object> conditionMap = (Map<String, Object>) condition;
+                InnerResult result = evaluateOperatorQuery(val, conditionMap);
+                if (result.state != EvaluationState.MATCHED) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            log.warn("Error evaluating $and operator: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    private boolean evaluateOrOperator(Object val, Object operand) {
+        try {
+            if (!(operand instanceof List<?> conditions)) {
+                log.warn("Operator $or expects List of conditions, got {} - treating as not matched",
+                           operand == null ? "null" : operand.getClass().getSimpleName());
+                return false;
+            }
+
+            // At least one condition must match
+            for (Object condition : conditions) {
+                if (!(condition instanceof Map)) {
+                    log.warn("Each condition in $or must be a Map, got {} - treating as not matched",
+                               condition == null ? "null" : condition.getClass().getSimpleName());
+                    return false;
+                }
+                @SuppressWarnings("unchecked")
+                Map<String, Object> conditionMap = (Map<String, Object>) condition;
+                InnerResult result = evaluateOperatorQuery(val, conditionMap);
+                if (result.state == EvaluationState.MATCHED) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            log.warn("Error evaluating $or operator: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    private boolean evaluateBetweenOperator(Object val, Object operand) {
+        try {
+            if (!(operand instanceof List<?> range)) {
+                log.warn("Operator $between expects List [min, max], got {} - treating as not matched",
+                           operand == null ? "null" : operand.getClass().getSimpleName());
+                return false;
+            }
+            if (range.size() != 2) {
+                log.warn("Operator $between expects List of exactly 2 elements [min, max], got {} elements - treating as not matched",
+                           range.size());
+                return false;
+            }
+
+            Object min = range.get(0);
+            Object max = range.get(1);
+
+            // Value must be >= min AND <= max
+            return compare(val, min) >= 0 && compare(val, max) <= 0;
+        } catch (Exception e) {
+            log.warn("Error evaluating $between operator: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    private boolean evaluateDateBeforeOperator(Object val, Object operand) {
+        try {
+            Instant valInstant = parseToInstant(val);
+            Instant operandInstant = parseToInstant(operand);
+
+            if (valInstant == null || operandInstant == null) {
+                log.debug("Could not parse dates for $dateBefore comparison - treating as not matched");
+                return false;
+            }
+
+            return valInstant.isBefore(operandInstant);
+        } catch (Exception e) {
+            log.warn("Error evaluating $dateBefore operator: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    private boolean evaluateDateAfterOperator(Object val, Object operand) {
+        try {
+            Instant valInstant = parseToInstant(val);
+            Instant operandInstant = parseToInstant(operand);
+
+            if (valInstant == null || operandInstant == null) {
+                log.debug("Could not parse dates for $dateAfter comparison - treating as not matched");
+                return false;
+            }
+
+            return valInstant.isAfter(operandInstant);
+        } catch (Exception e) {
+            log.warn("Error evaluating $dateAfter operator: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Parses various date representations to an Instant.
+     * Supports:
+     * - "now" keyword for current time
+     * - ISO 8601 date-time strings (e.g., "2025-01-01T00:00:00Z")
+     * - ISO 8601 date strings (e.g., "2025-01-01")
+     * - Long epoch milliseconds
+     * - Instant objects
+     *
+     * @param value the value to parse
+     * @return the parsed Instant, or null if parsing fails
+     */
+    private Instant parseToInstant(Object value) {
+        if (value == null) {
+            return null;
+        }
+
+        // Already an Instant
+        if (value instanceof Instant instant) {
+            return instant;
+        }
+
+        // Long epoch milliseconds
+        if (value instanceof Long epochMillis) {
+            return Instant.ofEpochMilli(epochMillis);
+        }
+
+        // Number (could be epoch millis or seconds)
+        if (value instanceof Number number) {
+            long longValue = number.longValue();
+            // Heuristic: if < 1e10, treat as seconds; otherwise as milliseconds
+            if (longValue < 10_000_000_000L) {
+                return Instant.ofEpochSecond(longValue);
+            } else {
+                return Instant.ofEpochMilli(longValue);
+            }
+        }
+
+        // String parsing
+        if (value instanceof String str) {
+            // Special keyword "now"
+            if ("now".equalsIgnoreCase(str)) {
+                return Instant.now();
+            }
+
+            // Try ISO 8601 date-time first
+            try {
+                return Instant.parse(str);
+            } catch (DateTimeParseException ignored) {
+                // Try other formats
+            }
+
+            // Try ISO 8601 date-time with offset
+            try {
+                return DateTimeFormatter.ISO_DATE_TIME
+                        .parse(str, Instant::from);
+            } catch (DateTimeParseException ignored) {
+                // Try other formats
+            }
+
+            // Try ISO 8601 date only (assume start of day in UTC)
+            try {
+                LocalDate date = LocalDate.parse(str, DateTimeFormatter.ISO_DATE);
+                return date.atStartOfDay(ZoneId.of("UTC")).toInstant();
+            } catch (DateTimeParseException ignored) {
+                // Failed to parse
+            }
+
+            log.debug("Could not parse date string '{}' - unsupported format", str);
+            return null;
+        }
+
+        log.debug("Unsupported date type: {} - cannot parse to Instant", value.getClass().getSimpleName());
+        return null;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

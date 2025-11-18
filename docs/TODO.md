@@ -11,7 +11,7 @@
 - Priority 4 (Documentation) - 100% complete (JavaDoc + README + design docs)
 - Priority 5 (Result Formatters) - 100% complete (JSON, YAML, Text, Summary, Custom)
 - Core bugs fixed (all 3 known issues resolved)
-- Comprehensive README with all 18 operators documented
+- Comprehensive README with all 23 operators documented
 - Builder pattern APIs - 100% complete (CriterionBuilder + CriteriaGroupBuilder + SpecificationBuilder)
 - Result formatters - 100% complete (5 formatters with 39 tests)
 
@@ -35,7 +35,7 @@
 ## 📋 Priority 1: Foundation (CRITICAL)
 
 ### Testing (Week 1)
-- [x] Unit tests for all 18 operators in CriterionEvaluator
+- [x] Unit tests for all 23 operators in CriterionEvaluator
 - [x] Unit tests for SpecificationEvaluator (parallel evaluation, result caching)
 - [x] Integration tests for end-to-end scenarios
 - [x] Edge case testing (nulls, type mismatches, deep nesting)
@@ -199,39 +199,39 @@ These operators eliminate common regex patterns and provide essential negation:
   ```
   **Why**: File extension checks, domain validation - extremely common
 
-#### Tier 2 - High Value (Business Rule Focus)
+#### Tier 2 - High Value (Business Rule Focus) ✅ **COMPLETED**
 
 These enable common business rule patterns without pre-processing:
 
-- [ ] **`$dateBefore`** - Date comparison (less than)
+- [x] **`$dateBefore`** - Date comparison (less than) ✅
   ```java
   {"expiryDate": {"$dateBefore": "2025-01-01"}}
   {"subscription.endDate": {"$dateBefore": "now"}}
   ```
   **Why**: Business rules heavily rely on date comparisons (expiry, deadlines)
 
-- [ ] **`$dateAfter`** - Date comparison (greater than)
+- [x] **`$dateAfter`** - Date comparison (greater than) ✅
   ```java
   {"createdAt": {"$dateAfter": "2024-01-01"}}
   {"lastLogin": {"$dateAfter": "2024-06-01"}}
   ```
   **Why**: Recency checks, activation dates, audit trails
 
-- [ ] **`$and`** - Multiple conditions on same field
+- [x] **`$and`** - Multiple conditions on same field ✅
   ```java
   {"age": {"$and": [{"$gte": 18}, {"$lt": 65}]}}
   {"price": {"$and": [{"$gt": 0}, {"$lte": 1000}]}}
   ```
   **Why**: Currently requires separate criteria + CompositeCriterion; inline is cleaner
 
-- [ ] **`$or`** - Alternative conditions on same field
+- [x] **`$or`** - Alternative conditions on same field ✅
   ```java
   {"score": {"$or": [{"$eq": 0}, {"$gte": 80}]}}
   {"status": {"$or": [{"$eq": "ACTIVE"}, {"$exists": false}]}}
   ```
   **Why**: Flexible matching without multiple criteria
 
-- [ ] **`$between`** - Inclusive range (syntactic sugar)
+- [x] **`$between`** - Inclusive range (syntactic sugar) ✅
   ```java
   {"price": {"$between": [100, 500]}}
   {"age": {"$between": [18, 65]}}
