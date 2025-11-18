@@ -1,5 +1,6 @@
 package uk.codery.jspec.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import uk.codery.jspec.evaluator.EvaluationContext;
 import uk.codery.jspec.result.EvaluationResult;
 import uk.codery.jspec.result.EvaluationState;
@@ -113,14 +114,20 @@ import uk.codery.jspec.result.ReferenceResult;
  *   <li>Never throws exceptions (graceful degradation)</li>
  * </ul>
  *
- * @param id the unique identifier of the referenced criteria
+ * @param ref the unique identifier of the referenced criteria
  * @see CompositeCriterion
  * @see QueryCriterion
  * @see EvaluationContext
  * @see ReferenceResult
  * @since 0.2.0
  */
-public record CriterionReference(String id) implements Criterion {
+public record CriterionReference(String ref) implements Criterion {
+
+    @JsonIgnore
+    @Override
+    public String id() {
+        return ref;
+    }
 
     /**
      * Evaluates this reference by looking up the cached result.
@@ -146,7 +153,7 @@ public record CriterionReference(String id) implements Criterion {
     @Override
     public EvaluationResult evaluate(Object document, EvaluationContext context) {
         // Look up in cache - if not found, this is an error
-        EvaluationResult referencedResult = context.getCached(id);
+        EvaluationResult referencedResult = context.getCached(ref);
 
         if (referencedResult == null) {
             // Referenced criterion not found or not yet evaluated

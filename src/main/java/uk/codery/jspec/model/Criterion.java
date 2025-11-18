@@ -52,7 +52,7 @@ public sealed interface Criterion
      *
      * @return the CriterionReference (never null)
      */
-    default Criterion ref() {
+    default Criterion referrence() {
         return new CriterionReference(id());
     }
 
