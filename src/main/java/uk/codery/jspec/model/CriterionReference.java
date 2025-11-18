@@ -94,13 +94,14 @@ import uk.codery.jspec.result.ReferenceResult;
  * // All three base criteria evaluated once, results reused in both groups
  * }</pre>
  *
- * <h3>Convenience Constructor</h3>
+ * <h3>YAML/JSON Serialization</h3>
+ * <p>In YAML/JSON, use the "ref" property to create a reference:
  * <pre>{@code
- * // Reference uses same ID as target
- * new CriterionReference("age-check")  // id = "age-check", refId = "age-check"
+ * # YAML example
+ * - ref: age-check
  *
- * // Or use different ID for the reference
- * new CriterionReference("my-ref-id", "age-check")  // id = "my-ref-id", refId = "age-check"
+ * # JSON example
+ * {"ref": "age-check"}
  * }</pre>
  *
  * <h2>Error Handling</h2>

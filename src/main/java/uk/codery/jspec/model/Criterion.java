@@ -23,7 +23,7 @@ import uk.codery.jspec.result.EvaluationResult;
  * <ul>
  *   <li>If has "query" property → {@link QueryCriterion}</li>
  *   <li>If has "junction" property → {@link CompositeCriterion}</li>
- *   <li>Otherwise → {@link CriterionReference}</li>
+ *   <li>If has "ref" property → {@link CriterionReference}</li>
  * </ul>
  *
  * <h3>Evaluation:</h3>
