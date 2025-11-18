@@ -13,7 +13,7 @@
  * <dependency>
  *     <groupId>uk.codery</groupId>
  *     <artifactId>jspec</artifactId>
- *     <version>0.4.0</version>
+ *     <version>0.4.1</version>
  * </dependency>
  */
 
@@ -143,12 +143,12 @@ public class QuickStart {
         System.out.println("\nLooking up specific results:");
 
         // Using Optional-based API (recommended)
-        outcome.findResult("eligibility").ifPresent(result -> {
+        outcome.find("eligibility").ifPresent(result -> {
             System.out.println("  Eligibility check: " + result.state());
         });
 
-        // Direct lookup (returns null if not found)
-        EvaluationResult ageResult = outcome.getResult("age-check");
+        // Direct lookup using asMap()
+        EvaluationResult ageResult = outcome.asMap().get("age-check");
         if (ageResult != null) {
             System.out.println("  Age check passed: " + ageResult.state().matched());
         }

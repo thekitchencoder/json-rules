@@ -64,7 +64,7 @@ public class EligibilityService {
         EvaluationOutcome outcome = evaluateLoanApplication(applicant);
 
         // Check the composite criterion result
-        return outcome.findResult("loan-eligibility")
+        return outcome.find("loan-eligibility")
                 .map(result -> result.state().matched())
                 .orElse(false);
     }

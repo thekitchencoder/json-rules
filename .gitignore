@@ -16,3 +16,7 @@
 # Logs
 *.log
 .env
+
+# Examples
+/examples/*/target/
+/examples/*/.idea/
