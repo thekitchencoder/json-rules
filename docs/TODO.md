@@ -11,7 +11,7 @@
 - Priority 4 (Documentation) - 100% complete (JavaDoc + README + design docs)
 - Priority 5 (Result Formatters) - 100% complete (JSON, YAML, Text, Summary, Custom)
 - Core bugs fixed (all 3 known issues resolved)
-- Comprehensive README with all 13 operators documented
+- Comprehensive README with all 23 operators documented
 - Builder pattern APIs - 100% complete (CriterionBuilder + CriteriaGroupBuilder + SpecificationBuilder)
 - Result formatters - 100% complete (5 formatters with 39 tests)
 
@@ -35,7 +35,7 @@
 ## 📋 Priority 1: Foundation (CRITICAL)
 
 ### Testing (Week 1)
-- [x] Unit tests for all 13 operators in CriterionEvaluator
+- [x] Unit tests for all 23 operators in CriterionEvaluator
 - [x] Unit tests for SpecificationEvaluator (parallel evaluation, result caching)
 - [x] Integration tests for end-to-end scenarios
 - [x] Edge case testing (nulls, type mismatches, deep nesting)
@@ -167,10 +167,148 @@
 - [ ] Improve type casting and validation
 
 ### Additional Operators
-- [ ] String operators: `$startsWith`, `$endsWith`, `$contains`, `$length`
-- [ ] Date operators: `$before`, `$after`, `$between`
-- [ ] Arithmetic operators: `$mod`, `$abs`, `$ceil`, `$floor`
-- [ ] Logical operators: `$not`, `$nor`
+
+#### Tier 1 - High Priority (Common Use, High Impact) ✅ **COMPLETED**
+
+These operators eliminate common regex patterns and provide essential negation:
+
+- [x] **`$contains`** - Substring/element check ✅
+  ```java
+  // String: {"description": {"$contains": "urgent"}}
+  // Array: {"tags": {"$contains": "vip"}}
+  ```
+  **Why**: Extremely common, avoids regex for simple cases, works on both strings and arrays
+
+- [x] **`$not`** - Invert any condition ✅
+  ```java
+  {"status": {"$not": {"$in": ["BANNED", "SUSPENDED"]}}}
+  ```
+  **Why**: Essential for negation without creating duplicate criteria
+
+- [x] **`$startsWith`** - String prefix match ✅
+  ```java
+  {"email": {"$startsWith": "admin@"}}
+  {"filename": {"$startsWith": "/var/log/"}}
+  ```
+  **Why**: Very common pattern, clearer and faster than regex
+
+- [x] **`$endsWith`** - String suffix match ✅
+  ```java
+  {"filename": {"$endsWith": ".pdf"}}
+  {"email": {"$endsWith": "@company.com"}}
+  ```
+  **Why**: File extension checks, domain validation - extremely common
+
+#### Tier 2 - High Value (Business Rule Focus) ✅ **COMPLETED**
+
+These enable common business rule patterns without pre-processing:
+
+- [x] **`$dateBefore`** - Date comparison (less than) ✅
+  ```java
+  {"expiryDate": {"$dateBefore": "2025-01-01"}}
+  {"subscription.endDate": {"$dateBefore": "now"}}
+  ```
+  **Why**: Business rules heavily rely on date comparisons (expiry, deadlines)
+
+- [x] **`$dateAfter`** - Date comparison (greater than) ✅
+  ```java
+  {"createdAt": {"$dateAfter": "2024-01-01"}}
+  {"lastLogin": {"$dateAfter": "2024-06-01"}}
+  ```
+  **Why**: Recency checks, activation dates, audit trails
+
+- [x] **`$and`** - Multiple conditions on same field ✅
+  ```java
+  {"age": {"$and": [{"$gte": 18}, {"$lt": 65}]}}
+  {"price": {"$and": [{"$gt": 0}, {"$lte": 1000}]}}
+  ```
+  **Why**: Currently requires separate criteria + CompositeCriterion; inline is cleaner
+
+- [x] **`$or`** - Alternative conditions on same field ✅
+  ```java
+  {"score": {"$or": [{"$eq": 0}, {"$gte": 80}]}}
+  {"status": {"$or": [{"$eq": "ACTIVE"}, {"$exists": false}]}}
+  ```
+  **Why**: Flexible matching without multiple criteria
+
+- [x] **`$between`** - Inclusive range (syntactic sugar) ✅
+  ```java
+  {"price": {"$between": [100, 500]}}
+  {"age": {"$between": [18, 65]}}
+  ```
+  **Why**: Very common pattern, clearer than combining $gte/$lte
+
+#### Tier 3 - Nice to Have
+
+Useful for specific scenarios:
+
+- [ ] **`$length`** - String/array length with nested operators
+  ```java
+  {"password": {"$length": {"$gte": 8}}}
+  {"tags": {"$length": {"$lte": 10}}}
+  ```
+  **Why**: Validation rules; note `$size` only does exact match
+
+- [ ] **`$mod`** - Modulo operation
+  ```java
+  {"userId": {"$mod": [10, 0]}}  // divisible by 10
+  {"orderId": {"$mod": [100, 42]}}  // for sharding
+  ```
+  **Why**: Batching, sharding, round-robin distribution
+
+- [ ] **`$isEmpty`** - Empty check for strings/arrays/objects
+  ```java
+  {"cart": {"$isEmpty": false}}
+  {"notes": {"$isEmpty": true}}
+  ```
+  **Why**: Clearer than `{"$size": 0}`, works on strings too
+
+- [ ] **`$any`** / **`$hasAny`** - Any element matches (inverse of $all)
+  ```java
+  {"tags": {"$any": ["urgent", "vip", "priority"]}}
+  ```
+  **Why**: "Has at least one of these" is common; currently needs $in on arrays
+
+- [ ] **`$dateWithin`** - Within time period from now
+  ```java
+  {"lastLogin": {"$dateWithin": "30d"}}
+  {"createdAt": {"$dateWithin": "1h"}}
+  ```
+  **Why**: Active user checks, recent activity, SLA monitoring
+
+- [ ] **`$format`** - Named format validation
+  ```java
+  {"email": {"$format": "email"}}
+  {"phone": {"$format": "phone"}}
+  {"id": {"$format": "uuid"}}
+  ```
+  **Why**: Better error messages than raw regex, self-documenting
+
+#### Implementation Notes
+
+All new operators should follow these patterns:
+
+1. **Type Safety**: Check types before casting, return false for mismatches
+2. **Null Handling**: Handle null values explicitly
+3. **Graceful Degradation**: Never throw exceptions, return false → UNDETERMINED
+4. **Thread Safety**: Must be safe for concurrent use
+5. **Performance**: Consider caching for expensive operations (like date parsing)
+
+Example implementation for `$contains`:
+```java
+operators.put("$contains", (val, operand) -> {
+    if (val == null || operand == null) {
+        return false;
+    }
+    if (val instanceof String str && operand instanceof String substring) {
+        return str.contains(substring);
+    }
+    if (val instanceof Collection<?> collection) {
+        return collection.contains(operand);
+    }
+    return false;
+});
+```
 
 ---
 
