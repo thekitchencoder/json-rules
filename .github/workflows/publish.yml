@@ -25,7 +25,7 @@ jobs:
 
       - name: Update version to release version
         run: |
-          mvn versions:set -DnewVersion=${{ github.event.release.tag_name }}
+          mvn versions:set -DnewVersion=${{ github.event.release.name }}
           mvn versions:commit
 
       - name: Build and Test
